@@ -6,6 +6,10 @@ import {
   isValidId,
   putJson,
   listAll,
+  readState,
+  statePath,
+  caseReportPath,
+  fingerprint,
   readBody,
   fail,
 } from './_lib.js';
@@ -27,8 +31,37 @@ export default async function handler(req, res) {
   const target = clean(body.target, 10);
 
   if (!isValidId(id)) return fail(res, 400, 'That case number is not valid.');
-  if (!voteId) return fail(res, 403, 'Rule on the case first.');
   if (!target) return fail(res, 400, 'Nothing selected.');
+
+  /**
+   * Reporting the case itself is deliberately open to anyone who can see it.
+   * The evidence and any attached photo are visible before voting, so requiring
+   * a vote first would mean the only way to report a photo of somebody is to
+   * take part in judging them. Keyed by fingerprint so one person is one report.
+   */
+  if (target === 'case') {
+    const fp = fingerprint(req, id);
+    try {
+      await putJson(caseReportPath(id, fp), { at: Date.now() });
+      const reports = await listAll(`c/${id}/cr/`);
+      if (reports.length >= REPORT_THRESHOLD) {
+        const state = await readState(id);
+        if (!state.closed) {
+          state.closed = true;
+          state.by = 'reports';
+          state.at = Date.now();
+          await putJson(statePath(id), state);
+        }
+      }
+      return res.status(200).json({ ok: true, target, threshold: REPORT_THRESHOLD });
+    } catch (err) {
+      return fail(res, 502, 'The report did not go through. Try again.', {
+        detail: String(err?.message || err),
+      });
+    }
+  }
+
+  if (!voteId) return fail(res, 403, 'Rule on the case first.');
 
   const voter = await listAll(`c/${id}/v/`).catch(() => []);
   const knows = voter.some((b) => b.pathname.includes(`~${voteId}~`));

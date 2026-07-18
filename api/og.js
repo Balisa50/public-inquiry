@@ -50,7 +50,9 @@ export default async function handler(req) {
       const r = await fetch(`${url.origin}/api/case?id=${id}`);
       if (r.ok) {
         const j = await r.json();
-        if (j.ok) kase = j;
+        // A closed case falls back to the generic card. Whatever got it taken
+        // down should not keep rendering in every chat the link reached.
+        if (j.ok && !j.closed) kase = j;
       }
     } catch {
       // Fall through to the generic card.

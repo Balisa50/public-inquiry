@@ -207,6 +207,36 @@ input[type=range]::-moz-range-thumb{
 .bar i{display:block;height:100%;background:var(--ink);transition:width .5s ease}
 .bar-row.mine .bar-head b::after{content:" \2190 you";font-family:var(--mono);font-size:10.5px;color:var(--muted)}
 
+/* ---------- exhibits. flat, no boxes, separated by rules ---------- */
+#vote-exhibit:not(:empty){margin-top:18px}
+.exhibit{border-left:3px solid var(--accent);padding-left:14px;margin-top:16px}
+.exhibit-site{
+  font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;
+}
+.exhibit-title{
+  font-family:var(--serif);font-size:23px;line-height:1.2;margin:0 0 8px;
+  display:block;color:var(--ink);text-decoration:none;
+}
+.exhibit-title:hover{text-decoration:underline}
+.exhibit-url{
+  font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-all;
+  display:block;
+}
+.exhibit img{
+  display:block;width:100%;height:auto;margin-top:10px;
+  border:1px solid var(--rule);
+}
+.embed-frame{
+  position:relative;width:100%;padding-top:56.25%;margin-top:10px;
+  border:1px solid var(--rule);background:var(--paper-2);
+}
+.embed-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#image-thumb{display:block;width:100%;height:auto;margin-top:10px;border:1px solid var(--rule)}
+.linkbtn.quiet{color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.linkbtn.quiet.accent{color:var(--accent)}
+#link-card:not(.hide){margin-top:14px}
+
 /* the screenshot region. tightened up so the whole verdict lands in one grab */
 #shot{padding-bottom:4px}
 .shot-line{margin:10px 0 20px;font-size:17px;line-height:1.35}
@@ -292,6 +322,33 @@ footer a{color:var(--muted)}
     </div>
 
     <div class="field">
+      <span class="micro">Attach something (optional)</span>
+      <div class="chips" id="attach-modes">
+        <button class="chip" type="button" data-mode="none">Nothing</button>
+        <button class="chip" type="button" data-mode="link">A link</button>
+        <button class="chip" type="button" data-mode="image">A photo</button>
+      </div>
+
+      <div id="attach-link" class="hide" style="margin-top:14px">
+        <input type="url" id="f-link" maxlength="600" placeholder="Paste a news story, a public video, a public post">
+        <button class="btn ghost" id="do-preview" type="button">Fetch it</button>
+        <p class="tiny" id="link-status" style="margin-top:8px"></p>
+        <div id="link-card" class="hide"></div>
+      </div>
+
+      <div id="attach-image" class="hide" style="margin-top:14px">
+        <input type="file" id="f-image" accept="image/jpeg,image/png,image/webp" style="display:none">
+        <button class="btn ghost" id="do-pick" type="button">Choose a photo</button>
+        <p class="tiny" id="image-status" style="margin-top:8px"></p>
+        <div id="image-preview" class="hide">
+          <img id="image-thumb" alt="The photo you attached">
+          <button class="linkbtn" id="do-drop-image" type="button">Remove this photo</button>
+        </div>
+        <p class="tiny" style="margin-top:10px">Location data and camera details are stripped before the photo leaves your phone. Photos of people who did not agree to be here get taken down.</p>
+      </div>
+    </div>
+
+    <div class="field">
       <span class="micro">The question</span>
       <div class="chips" id="q-presets"></div>
       <input type="text" id="f-question" maxlength="140" placeholder="Who is at fault?">
@@ -344,6 +401,7 @@ footer a{color:var(--muted)}
     <hr class="rule">
     <span class="micro">Exhibit A</span>
     <p class="evidence" id="vote-evidence" style="margin-top:10px"></p>
+    <div id="vote-exhibit"></div>
     <hr class="perf">
     <h3 id="vote-question" class="accent-rule"></h3>
     <div id="vote-options" style="margin-top:18px"></div>
@@ -351,6 +409,15 @@ footer a{color:var(--muted)}
       <button class="btn" id="do-side" disabled>Next</button>
       <p class="tiny" style="margin-top:12px">Nothing is shown to you until you rule. That applies to everybody, so the numbers actually mean something.</p>
     </div>
+    <hr class="rule">
+    <div class="row">
+      <button class="linkbtn quiet" id="do-report-case" type="button">Report this case</button>
+      <span id="host-tools" class="hide">
+        <button class="linkbtn quiet" id="do-strip" type="button">Remove attachment</button>
+        <button class="linkbtn quiet accent" id="do-close" type="button">Take it down</button>
+      </span>
+    </div>
+    <p class="tiny" id="case-mod-status" style="margin-top:8px"></p>
   </section>
 
   <!-- PREDICT -->
@@ -474,7 +541,8 @@ var PRESETS = [
 /* ---------------- state ---------------- */
 var S = {
   caseId:null, hostKey:null, kase:null,
-  choice:null, prediction:50, voteId:null, results:null, isHost:false
+  choice:null, prediction:50, voteId:null, results:null, isHost:false,
+  attachMode:"none", link:null, imageId:null
 };
 
 /* ---------------- helpers ---------------- */
@@ -566,6 +634,8 @@ function boot(){
   S.hostKey = route.key || lsGet("pi_host_" + route.id) || null;
   setMast("Case " + route.id.toUpperCase(), S.hostKey ? "Host" : "Juror");
 
+  S.isHost = Boolean(S.hostKey);
+
   var known = lsGet("pi_v_" + route.id);
   if(known){
     S.voteId = known;
@@ -575,6 +645,10 @@ function boot(){
 
   show("s-boot");
   api("/api/case?id=" + encodeURIComponent(route.id)).then(function(j){
+    if(j.closed){
+      notice("Case withdrawn.", "This one was taken down, either by the person who filed it or after enough people reported it. Nothing further to see.");
+      return;
+    }
     S.kase = j;
     renderCase();
   }).catch(function(e){
@@ -603,7 +677,108 @@ function resetBuild(){
   $("f-options").innerHTML = ""; $("build-err").textContent = "";
   count("f-evidence","c-evidence"); count("f-question","c-question"); count("f-comment","c-comment");
   Array.prototype.forEach.call($("q-presets").children, function(c){ c.setAttribute("aria-pressed","false"); });
+  setAttachMode("none");
+  S.link = null; S.imageId = null;
+  $("f-link").value = ""; $("link-status").textContent = ""; $("image-status").textContent = "";
+  $("link-card").classList.add("hide"); $("link-card").innerHTML = "";
+  $("image-preview").classList.add("hide"); $("f-image").value = "";
 }
+
+/* ---------------- attachments ---------------- */
+function setAttachMode(mode){
+  S.attachMode = mode;
+  Array.prototype.forEach.call($("attach-modes").children, function(b){
+    b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === mode));
+  });
+  $("attach-link").classList.toggle("hide", mode !== "link");
+  $("attach-image").classList.toggle("hide", mode !== "image");
+  if(mode !== "link"){ S.link = null; }
+  if(mode !== "image"){ S.imageId = null; }
+}
+
+Array.prototype.forEach.call($("attach-modes").children, function(b){
+  b.addEventListener("click", function(){ setAttachMode(b.getAttribute("data-mode")); });
+});
+
+$("do-preview").addEventListener("click", function(){
+  var raw = $("f-link").value.trim();
+  if(!raw){ $("link-status").textContent = "Paste a link first."; return; }
+  var btn = this; btn.disabled = true; btn.textContent = "Fetching";
+  $("link-status").textContent = "";
+  api("/api/preview?url=" + encodeURIComponent(raw))
+    .then(function(j){
+      if(!j.ok){ $("link-status").textContent = j.error || "That link would not load."; return; }
+      S.link = { url:j.url, title:j.title, site:j.site, image:j.image, embed:j.embed };
+      $("link-card").innerHTML = "";
+      $("link-card").appendChild(exhibitNode(S.link));
+      $("link-card").classList.remove("hide");
+      $("link-status").textContent = j.note ? ("Attached. " + j.note) : "Attached.";
+    })
+    .catch(function(){ $("link-status").textContent = "That link would not load. It can still be attached as it is."; })
+    .then(function(){ btn.disabled = false; btn.textContent = "Fetch it"; });
+});
+
+$("do-pick").addEventListener("click", function(){ $("f-image").click(); });
+$("do-drop-image").addEventListener("click", function(){
+  S.imageId = null; $("f-image").value = "";
+  $("image-preview").classList.add("hide"); $("image-status").textContent = "";
+});
+
+/**
+ * Re-encodes the photo through a canvas before it ever leaves the device.
+ * That caps the dimensions and drops the EXIF block, which on a phone photo
+ * carries GPS coordinates and a capture time. Uploading the original would
+ * quietly undo the anonymity this whole product promises.
+ */
+function prepareImage(file){
+  return new Promise(function(resolve, reject){
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      var max = 1600;
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if(!w || !h) return reject(new Error("That image would not open."));
+      if(w > max || h > max){
+        var r = Math.min(max / w, max / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      var cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve({ data: cv.toDataURL("image/jpeg", 0.82), w:w, h:h });
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error("That image would not open.")); };
+    img.src = url;
+  });
+}
+
+$("f-image").addEventListener("change", function(){
+  var file = this.files && this.files[0];
+  if(!file) return;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){
+    $("image-status").textContent = "JPEG, PNG or WebP only."; return;
+  }
+  $("image-status").textContent = "Stripping location data and uploading";
+  prepareImage(file)
+    .then(function(out){
+      $("image-thumb").src = out.data;
+      $("image-preview").classList.remove("hide");
+      return api("/api/upload", { method:"POST", body:JSON.stringify({ data: out.data }) });
+    })
+    .then(function(j){
+      if(!j.ok) throw new Error(j.error || "That did not upload.");
+      S.imageId = j.uploadId;
+      $("image-status").textContent = "Attached. Location data removed.";
+    })
+    .catch(function(e){
+      S.imageId = null;
+      $("image-preview").classList.add("hide");
+      $("image-status").textContent = e.message || "That did not upload. You can still file without it.";
+    });
+});
 
 function renderPresets(){
   var wrap = $("q-presets");
@@ -668,12 +843,21 @@ function fileCase(){
     return i.value.trim();
   }).filter(Boolean);
 
-  if(evidence.length < 10){ err.textContent = "The evidence needs a bit more than that."; return; }
+  // An attachment can carry the case, so only demand written evidence when
+  // there is nothing else to look at.
+  var link = S.attachMode === "link" ? S.link : null;
+  var imageId = S.attachMode === "image" ? S.imageId : null;
+  var hasAttachment = Boolean(link || imageId);
+
+  if(!hasAttachment && evidence.length < 10){ err.textContent = "The evidence needs a bit more than that."; return; }
   if(question.length < 3){ err.textContent = "Every case needs a question."; return; }
   if(options.length < 2){ err.textContent = "Give the public at least two options."; return; }
 
   btn.disabled = true; btn.textContent = "Filing...";
-  post("/api/case", { evidence:evidence, question:question, options:options })
+  post("/api/case", {
+    evidence:evidence, question:question, options:options,
+    link:link, imageId:imageId
+  })
     .then(function(j){
       lsSet("pi_host_" + j.id, j.hostKey);
       S.caseId = j.id; S.hostKey = j.hostKey;
@@ -687,12 +871,77 @@ function fileCase(){
     .then(function(){ btn.disabled = false; btn.textContent = "File the case"; });
 }
 
+/* ---------------- exhibits ---------------- */
+/* Built as nodes rather than innerHTML so nothing a stranger typed, or a page
+   title we scraped off somebody else's site, can be treated as markup. */
+function exhibitNode(att){
+  var wrap = document.createElement("div");
+  wrap.className = "exhibit";
+
+  if(att.kind === "image"){
+    var im = document.createElement("img");
+    im.src = att.url; im.alt = "Photo attached to this case"; im.loading = "lazy";
+    wrap.appendChild(im);
+    return wrap;
+  }
+
+  var site = document.createElement("span");
+  site.className = "exhibit-site";
+  site.textContent = att.site || "Attached link";
+  wrap.appendChild(site);
+
+  if(att.title){
+    var a = document.createElement("a");
+    a.className = "exhibit-title"; a.href = att.url; a.textContent = att.title;
+    a.target = "_blank"; a.rel = "noopener noreferrer nofollow";
+    wrap.appendChild(a);
+  }
+
+  if(att.embed && att.embed.provider === "youtube"){
+    wrap.appendChild(frameNode("https://www.youtube-nocookie.com/embed/" + encodeURIComponent(att.embed.id)));
+  } else if(att.embed && att.embed.provider === "vimeo"){
+    wrap.appendChild(frameNode("https://player.vimeo.com/video/" + encodeURIComponent(att.embed.id)));
+  } else if(att.image){
+    var thumb = document.createElement("img");
+    thumb.src = att.image; thumb.alt = ""; thumb.loading = "lazy";
+    thumb.addEventListener("error", function(){ thumb.remove(); });
+    wrap.appendChild(thumb);
+  }
+
+  var u = document.createElement("span");
+  u.className = "exhibit-url";
+  u.textContent = att.url;
+  wrap.appendChild(u);
+  return wrap;
+}
+
+function frameNode(src){
+  var box = document.createElement("div");
+  box.className = "embed-frame";
+  var f = document.createElement("iframe");
+  f.src = src; f.loading = "lazy"; f.allowFullscreen = true;
+  f.referrerPolicy = "no-referrer";
+  f.setAttribute("sandbox","allow-scripts allow-same-origin allow-presentation allow-popups");
+  f.title = "Attached video";
+  box.appendChild(f);
+  return box;
+}
+
 /* ---------------- vote ---------------- */
 function renderCase(){
   var k = S.kase;
   $("vote-serial").textContent = k.serial || "";
-  $("vote-evidence").textContent = k.evidence;
+  $("vote-evidence").textContent = k.evidence || "";
   $("vote-question").textContent = k.question;
+
+  var ex = $("vote-exhibit");
+  ex.innerHTML = "";
+  if(k.image && k.image.url) ex.appendChild(exhibitNode({ kind:"image", url:k.image.url }));
+  else if(k.link && k.link.url) ex.appendChild(exhibitNode(k.link));
+
+  $("host-tools").classList.toggle("hide", !S.isHost);
+  $("do-strip").classList.toggle("hide", !(k.image || k.link));
+  $("case-mod-status").textContent = "";
   var box = $("vote-options");
   box.innerHTML = "";
   k.options.forEach(function(opt,i){
@@ -964,6 +1213,40 @@ $("do-file").addEventListener("click", fileCase);
 
 $("do-copy").addEventListener("click", function(){ copyText(guestLink(), this); });
 $("do-share").addEventListener("click", function(){ shareLink(this); });
+/* ---------------- case level moderation ---------------- */
+$("do-report-case").addEventListener("click", function(){
+  var btn = this;
+  if(btn.dataset.done) return;
+  btn.disabled = true;
+  post("/api/report", { id:S.caseId, target:"case" })
+    .then(function(){
+      btn.dataset.done = "1"; btn.textContent = "Reported";
+      $("case-mod-status").textContent = "Reported. Enough reports and this case comes down.";
+    })
+    .catch(function(e){ $("case-mod-status").textContent = e.message; })
+    .then(function(){ btn.disabled = false; });
+});
+
+function hostAction(action, confirmText){
+  if(!window.confirm(confirmText)) return;
+  $("case-mod-status").textContent = "";
+  post("/api/moderate", { id:S.caseId, key:S.hostKey, target:"case", action:action })
+    .then(function(){
+      if(action === "close"){ notice("Case withdrawn.", "You took this one down. Nobody can rule on it now."); return; }
+      $("case-mod-status").textContent = "Attachment removed.";
+      $("do-strip").classList.add("hide");
+      $("vote-exhibit").innerHTML = "";
+      if(S.kase){ delete S.kase.image; delete S.kase.link; }
+    })
+    .catch(function(e){ $("case-mod-status").textContent = e.message; });
+}
+$("do-strip").addEventListener("click", function(){
+  hostAction("strip", "Remove the attachment from this case? The photo is deleted for good.");
+});
+$("do-close").addEventListener("click", function(){
+  hostAction("close", "Take the whole case down? This cannot be undone from here.");
+});
+
 $("show-hostlink").addEventListener("click", function(){
   $("hostlink-wrap").classList.toggle("hide");
 });

@@ -7,7 +7,11 @@ import {
   isValidId,
   putJson,
   readJson,
+  readState,
+  statePath,
   casePath,
+  uploadPath,
+  blobUrl,
   listAll,
   readBody,
   fail,
@@ -46,8 +50,34 @@ export default async function handler(req, res) {
     return fail(res, 403, 'That key does not open this case.');
   }
 
-  const path = `c/${id}/x/${target}.json`;
   try {
+    // Case level actions. The host can pull the attachment off their own case
+    // or take the whole thing down, without needing anyone else's agreement.
+    if (target === 'case') {
+      if (!['strip', 'close', 'reopen'].includes(action)) {
+        return fail(res, 400, 'That is not something you can do to a case.');
+      }
+      const state = await readState(id);
+      if (action === 'strip') state.stripped = true;
+      if (action === 'close') state.closed = true;
+      if (action === 'reopen') state.closed = false;
+      state.at = Date.now();
+      await putJson(statePath(id), state);
+
+      // Actually delete the bytes rather than just hiding them. A host who
+      // takes a photo down means it should be gone.
+      if ((action === 'strip' || action === 'close') && kase.image?.id) {
+        try {
+          const url = await blobUrl(uploadPath(kase.image.id));
+          if (url) await del(url);
+        } catch {
+          // The state flag already hides it, so a failed delete is not fatal.
+        }
+      }
+      return res.status(200).json({ ok: true, target, action, state });
+    }
+
+    const path = `c/${id}/x/${target}.json`;
     if (action === 'restore') {
       const existing = await listAll(path);
       await Promise.all(existing.map((b) => del(b.url)));

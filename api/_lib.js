@@ -91,6 +91,64 @@ export function casePath(id) {
 }
 
 /**
+ * Moderation state lives in its own blob rather than inside the case, because
+ * the case blob is written once at filing time and two writers would clobber
+ * each other. Absent state means a normal, visible case.
+ */
+export function statePath(id) {
+  return `c/${id}/state.json`;
+}
+
+export function caseReportPath(id, fp) {
+  return `c/${id}/cr/${fp}.json`;
+}
+
+export async function readState(id) {
+  try {
+    const s = await readJson(statePath(id));
+    return { closed: false, stripped: false, ...(s || {}) };
+  } catch {
+    return { closed: false, stripped: false };
+  }
+}
+
+/**
+ * Strips the attachment and, if the case is closed, the evidence too. Used by
+ * every path that hands a case to a reader: the API, the preview card and the
+ * server rendered page.
+ */
+export function applyState(kase, state) {
+  if (!kase) return kase;
+  const out = { ...kase };
+  if (state.stripped) {
+    delete out.link;
+    delete out.image;
+  }
+  if (state.closed) {
+    out.closed = true;
+    delete out.link;
+    delete out.image;
+  }
+  return out;
+}
+
+const UPLOAD_RE = /^[23456789abcdefghjmnpqrstuvwxyz]{14}\.(jpg|png|webp)$/;
+
+export function isValidUploadId(v) {
+  return typeof v === 'string' && UPLOAD_RE.test(v);
+}
+
+export function uploadPath(uploadId) {
+  return `u/${uploadId}`;
+}
+
+export async function blobUrl(pathname) {
+  const r = await list({ prefix: pathname, limit: 10 });
+  const blob = r.blobs.find((b) => b.pathname === pathname);
+  return blob ? blob.url : null;
+}
+
+/**
  * Vote pathname carries everything needed to count, so aggregating a case
  * costs one list() and zero content fetches. Only commented votes get read.
  *   c/<caseId>/v/<ts36>~<voteId>~<choice>~<prediction>~<c|n>.json

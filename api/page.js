@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ID_LEN, clean, isValidId, readJson, casePath } from './_lib.js';
+import { ID_LEN, clean, isValidId, readJson, readState, casePath } from './_lib.js';
 
 /**
  * Serves the app at /c/<caseId> with the preview tags filled in for that case.
@@ -45,7 +45,10 @@ export default async function handler(req, res) {
   let kase = null;
   if (isValidId(id)) {
     try {
-      kase = await readJson(casePath(id));
+      const [k, state] = await Promise.all([readJson(casePath(id)), readState(id)]);
+      // A closed case gets the generic tags, so a takedown also stops the
+      // preview rendering everywhere the link was already pasted.
+      if (k && !state.closed) kase = k;
     } catch {
       // A slow registry should still return a usable page.
     }
