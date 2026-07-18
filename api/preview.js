@@ -21,6 +21,13 @@ const FETCH_TIMEOUT_MS = 6000;
 const MAX_BYTES = 512 * 1024;
 const MAX_REDIRECTS = 3;
 
+/**
+ * Separated from ordinary failure on purpose. A page that will not load is
+ * still a link worth attaching, but an address we refused to touch must not
+ * come back as an attachable link.
+ */
+class Blocked extends Error {}
+
 function ipv4Private(ip) {
   const p = ip.split('.').map(Number);
   if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
@@ -52,11 +59,11 @@ async function assertPublic(hostname) {
   try {
     records = await lookup(hostname, { all: true });
   } catch {
-    throw new Error('That address does not resolve.');
+    throw new Blocked('That address does not resolve.');
   }
-  if (!records.length) throw new Error('That address does not resolve.');
+  if (!records.length) throw new Blocked('That address does not resolve.');
   for (const r of records) {
-    if (ipPrivate(r.address, r.family)) throw new Error('That address is not on the public internet.');
+    if (ipPrivate(r.address, r.family)) throw new Blocked('That address is not on the public internet.');
   }
 }
 
@@ -65,13 +72,23 @@ function parseSafeUrl(raw) {
   try {
     u = new URL(raw);
   } catch {
-    throw new Error('That does not look like a link.');
+    throw new Blocked('That does not look like a link.');
   }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') {
-    throw new Error('Only http and https links work here.');
+    throw new Blocked('Only http and https links work here.');
   }
-  if (u.username || u.password) throw new Error('Leave credentials out of the link.');
+  if (u.username || u.password) throw new Blocked('Leave credentials out of the link.');
   return u;
+}
+
+/**
+ * Bare domains get https:// added. Anything carrying its own scheme keeps it,
+ * so file: and gopher: are refused outright rather than being bolted onto
+ * https:// and turned into a nonsense host.
+ */
+function normalise(raw) {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
+  return `https://${raw}`;
 }
 
 async function fetchHtml(startUrl) {
@@ -184,7 +201,7 @@ export default async function handler(req, res) {
 
   let u;
   try {
-    u = parseSafeUrl(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    u = parseSafeUrl(normalise(raw));
   } catch (err) {
     return fail(res, 400, err.message);
   }
@@ -198,8 +215,12 @@ export default async function handler(req, res) {
     html = r.html;
     finalUrl = r.url;
   } catch (err) {
-    // A link that will not preview is still a link worth attaching, so degrade
-    // to the bare minimum rather than blocking the filing.
+    // An address we refused to touch is refused outright, so it never comes
+    // back as something the filer can attach.
+    if (err instanceof Blocked) return fail(res, 400, err.message);
+
+    // Anything else is just a page that would not load. That is still a link
+    // worth attaching, so degrade to the bare minimum rather than blocking it.
     return res.status(200).json({
       ok: true,
       url: u.href,
@@ -207,7 +228,7 @@ export default async function handler(req, res) {
       title: '',
       image: '',
       embed,
-      note: err.message,
+      note: 'That page would not open, so the link is attached as it is.',
     });
   }
 
