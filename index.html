@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Public Inquiry</title>
+<meta name="description" content="You file a case. The public rules on it. Nobody can lurk.">
+<meta name="theme-color" content="#F2EEE3">
+<meta property="og:title" content="The Public Inquiry">
+<meta property="og:description" content="You file a case. The public rules on it. Nobody can lurk.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2EEE3;
+  --paper-2:#EAE4D5;
+  --ink:#16130E;
+  --accent:#B02418;
+  --muted:#6E6656;
+  --rule:rgba(22,19,14,.18);
+  --rule-hard:rgba(22,19,14,.85);
+  --o0:#B02418;
+  --o1:#1F4E5F;
+  --o2:#7C5A17;
+  --o3:#4A3B6B;
+  --serif:"Instrument Serif",Georgia,serif;
+  --sans:"Space Grotesk",system-ui,-apple-system,sans-serif;
+  --mono:"Space Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  padding:0 20px env(safe-area-inset-bottom);
+  max-width:640px;
+  margin:0 auto;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:radial-gradient(rgba(22,19,14,.055) 1px,transparent 1px);
+  background-size:3px 3px;
+}
+main,header,footer{position:relative;z-index:1}
+
+/* ---------- type ---------- */
+h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(38px,11vw,56px);line-height:1.02}
+h2{font-size:clamp(30px,8.5vw,42px);line-height:1.06}
+h3{font-size:24px;line-height:1.15}
+p{margin:0 0 14px}
+.micro{
+  font-family:var(--sans);font-size:10.5px;font-weight:700;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--muted);
+}
+.micro.accent{color:var(--accent)}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.06em}
+.lede{font-size:16.5px;color:var(--muted);margin-bottom:0}
+.tiny{font-size:12.5px;line-height:1.45;color:var(--muted)}
+
+/* ---------- structure, no cards ---------- */
+.rule{border:0;border-top:1px solid var(--rule);margin:22px 0}
+.rule.hard{border-top:2px solid var(--rule-hard)}
+.perf{border:0;border-top:2px dashed rgba(22,19,14,.32);margin:26px 0}
+.accent-rule{border-left:3px solid var(--accent);padding-left:14px}
+.block{margin:26px 0}
+.stack>*+*{margin-top:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+/* ---------- masthead ---------- */
+.masthead{padding:18px 0 0}
+.masthead .row{align-items:flex-end}
+.wordmark{font-family:var(--serif);font-size:20px;line-height:1;letter-spacing:-.01em}
+.seal{
+  width:34px;height:34px;border:1.5px solid var(--ink);border-radius:50%;
+  display:grid;place-items:center;font-family:var(--mono);font-size:8px;
+  font-weight:700;letter-spacing:.02em;flex:0 0 auto;text-align:center;line-height:1.05;
+}
+.masthead-rule{border:0;border-top:2px solid var(--rule-hard);margin:12px 0 0}
+.masthead-rule + .masthead-sub{
+  display:flex;justify-content:space-between;gap:10px;padding-top:6px;
+  border-top:1px solid var(--rule);margin-top:2px;
+}
+
+/* ---------- barcode ---------- */
+.barcode{height:26px;width:100%;margin:0}
+.barcode-strip{display:flex;align-items:stretch;height:26px;gap:0}
+.barcode-strip i{display:block;background:var(--ink)}
+
+/* ---------- forms ---------- */
+label{display:block}
+.field{margin:0 0 22px}
+.field .micro{margin-bottom:7px;display:block}
+input[type=text],textarea,select{
+  width:100%;font-family:var(--sans);font-size:16px;color:var(--ink);
+  background:transparent;border:0;border-bottom:1.5px solid var(--rule-hard);
+  padding:9px 0;border-radius:0;appearance:none;
+}
+textarea{resize:vertical;min-height:96px;line-height:1.5}
+input[type=text]:focus,textarea:focus{outline:0;border-bottom-color:var(--accent)}
+::placeholder{color:rgba(110,102,86,.7)}
+.count{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:right;margin-top:5px}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.chip{
+  font-family:var(--sans);font-size:11.5px;font-weight:500;letter-spacing:.02em;
+  padding:7px 11px;border:1px solid var(--rule-hard);background:transparent;
+  color:var(--ink);cursor:pointer;border-radius:0;
+}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+
+.opt-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.opt-row .idx{font-family:var(--mono);font-size:11px;color:var(--muted);width:16px;flex:0 0 auto}
+.opt-row input{flex:1}
+.opt-row .x{
+  flex:0 0 auto;width:30px;height:30px;border:1px solid var(--rule);background:transparent;
+  color:var(--muted);font-size:17px;line-height:1;cursor:pointer;
+}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:block;width:100%;font-family:var(--sans);font-size:13px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;padding:17px 18px;border:0;
+  background:var(--ink);color:var(--paper);cursor:pointer;border-radius:0;text-align:center;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.accent{background:var(--accent)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--rule-hard)}
+.btn + .btn{margin-top:10px}
+.linkbtn{
+  background:none;border:0;padding:0;font-family:var(--sans);font-size:12.5px;
+  color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+}
+
+/* ---------- choice list ---------- */
+.choice{
+  display:block;width:100%;text-align:left;background:transparent;cursor:pointer;
+  border:0;border-bottom:1px solid var(--rule);padding:16px 0;
+  display:flex;align-items:center;gap:13px;font-family:var(--sans);font-size:17px;color:var(--ink);
+}
+.choice:first-of-type{border-top:1px solid var(--rule)}
+.choice .mark{
+  width:22px;height:22px;flex:0 0 auto;border:1.5px solid var(--ink);border-radius:50%;
+  display:grid;place-items:center;
+}
+.choice .mark::after{content:"";width:11px;height:11px;border-radius:50%;background:transparent}
+.choice[aria-pressed=true] .mark{border-color:var(--accent)}
+.choice[aria-pressed=true] .mark::after{background:var(--accent)}
+.choice[aria-pressed=true]{font-weight:500}
+
+/* ---------- slider ---------- */
+.pred-value{
+  font-family:var(--serif);font-size:clamp(64px,20vw,96px);line-height:.9;
+  display:flex;align-items:baseline;gap:2px;
+}
+.pred-value span{font-size:.36em;font-family:var(--sans);font-weight:700;letter-spacing:.02em}
+input[type=range]{
+  width:100%;appearance:none;background:transparent;margin:20px 0 6px;height:34px;
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--rule-hard)}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:30px;height:30px;background:var(--accent);border:0;border-radius:50%;
+  margin-top:-14px;cursor:grab;
+}
+input[type=range]::-moz-range-track{height:2px;background:var(--rule-hard)}
+input[type=range]::-moz-range-thumb{
+  width:30px;height:30px;background:var(--accent);border:0;border-radius:50%;cursor:grab;
+}
+.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+/* ---------- evidence ---------- */
+.evidence{
+  font-family:var(--serif);font-size:21px;line-height:1.34;white-space:pre-wrap;
+  word-break:break-word;
+}
+
+/* ---------- results ---------- */
+.stamp{
+  display:inline-block;font-family:var(--sans);font-size:15px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  border:3px solid var(--accent);padding:8px 14px;transform:rotate(-4.5deg);
+  opacity:.9;margin:6px 0 18px;
+}
+.stamp.cool{color:var(--o1);border-color:var(--o1)}
+.big-pct{
+  font-family:var(--serif);font-size:clamp(96px,34vw,168px);line-height:.82;
+  letter-spacing:-.035em;display:flex;align-items:baseline;
+}
+.big-pct span{font-size:.28em;font-family:var(--sans);font-weight:700;letter-spacing:.02em;margin-left:2px}
+.bar-row{margin:0 0 16px}
+.bar-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.bar-head b{font-weight:500;font-size:15.5px}
+.bar-head em{font-family:var(--mono);font-style:normal;font-size:13px}
+.bar{height:9px;width:100%;background:rgba(22,19,14,.1)}
+.bar i{display:block;height:100%;background:var(--ink);transition:width .5s ease}
+.bar-row.mine .bar-head b::after{content:" \2190 you";font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+.comment{border-left:3px solid var(--rule);padding:0 0 0 14px;margin:0 0 20px}
+.comment .who{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.comment .txt{font-size:15.5px;line-height:1.48;white-space:pre-wrap;word-break:break-word}
+.comment .acts{display:flex;gap:14px;margin-top:7px}
+.comment.gone{opacity:.45}
+
+.notice{background:var(--paper-2);padding:13px 15px;border-left:3px solid var(--accent);font-size:13.5px}
+.notice.ok{border-left-color:var(--o1)}
+
+.linkbox{
+  display:flex;align-items:center;gap:10px;border-top:1px solid var(--rule-hard);
+  border-bottom:1px solid var(--rule-hard);padding:14px 0;margin:16px 0;
+}
+.linkbox code{
+  font-family:var(--mono);font-size:13px;word-break:break-all;flex:1;line-height:1.4;
+}
+
+footer{padding:34px 0 30px;margin-top:14px;border-top:1px solid var(--rule)}
+footer a{color:var(--muted)}
+.hide{display:none!important}
+.spin{display:inline-block;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (min-width:560px){
+  body{padding:0 34px}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="row">
+    <div>
+      <div class="micro">Office of Public Opinion</div>
+      <div class="wordmark">The Public Inquiry</div>
+    </div>
+    <div class="seal">EST<br>2026</div>
+  </div>
+  <hr class="masthead-rule">
+  <div class="masthead-sub">
+    <span class="micro" id="mh-left">Filing Desk</span>
+    <span class="micro" id="mh-right">Open</span>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- BOOT -->
+  <section id="s-boot" class="block">
+    <p class="micro">Retrieving file<span class="spin">...</span></p>
+  </section>
+
+  <!-- BUILD -->
+  <section id="s-build" class="block hide">
+    <h1>File a case.</h1>
+    <p class="lede">Somebody did something. Let the public rule on it.</p>
+    <hr class="perf">
+
+    <div class="field">
+      <span class="micro">Exhibit A. The evidence</span>
+      <textarea id="f-evidence" maxlength="1200" placeholder="Set out what happened. Keep it short and keep real people's names and faces out of it."></textarea>
+      <div class="count"><span id="c-evidence">0</span> / 1200</div>
+    </div>
+
+    <div class="field">
+      <span class="micro">The question</span>
+      <div class="chips" id="q-presets"></div>
+      <input type="text" id="f-question" maxlength="140" placeholder="Who is at fault?">
+      <div class="count"><span id="c-question">0</span> / 140</div>
+    </div>
+
+    <div class="field">
+      <span class="micro">The verdict options</span>
+      <div id="f-options"></div>
+      <button class="linkbtn" id="add-option" type="button">+ add another option</button>
+    </div>
+
+    <div class="notice tiny">
+      Rulings are anonymous to everyone who reads the case, including you. Keep it about the thing, not about a person who never asked to be here.
+    </div>
+    <div class="block">
+      <button class="btn accent" id="do-file">File the case</button>
+      <p class="tiny" id="build-err" style="margin-top:12px;color:var(--accent)"></p>
+    </div>
+  </section>
+
+  <!-- FILED -->
+  <section id="s-filed" class="block hide">
+    <div class="micro accent">Filed</div>
+    <h2>Case opened.</h2>
+    <p class="mono" id="filed-serial" style="margin-top:10px;color:var(--muted)"></p>
+    <hr class="perf">
+    <span class="micro">Send this to the jury</span>
+    <div class="linkbox"><code id="filed-link"></code></div>
+    <button class="btn" id="do-copy">Copy the link</button>
+    <button class="btn ghost" id="do-share">Share</button>
+    <hr class="rule">
+    <p class="tiny">This link is yours and it carries your moderation key, so you can delete any comment on the case. The version you share with other people strips the key out automatically when you use the buttons above.</p>
+    <button class="btn ghost" id="do-open-case">Go to the case</button>
+  </section>
+
+  <!-- VOTE -->
+  <section id="s-vote" class="block hide">
+    <div class="row">
+      <span class="micro">Step 1 of 3. Take a side</span>
+      <span class="mono" id="vote-serial" style="color:var(--muted)"></span>
+    </div>
+    <hr class="rule">
+    <span class="micro">Exhibit A</span>
+    <p class="evidence" id="vote-evidence" style="margin-top:10px"></p>
+    <hr class="perf">
+    <h3 id="vote-question" class="accent-rule"></h3>
+    <div id="vote-options" style="margin-top:18px"></div>
+    <div class="block">
+      <button class="btn" id="do-side" disabled>Next</button>
+      <p class="tiny" style="margin-top:12px">Nothing is shown to you until you rule. That applies to everybody, so the numbers actually mean something.</p>
+    </div>
+  </section>
+
+  <!-- PREDICT -->
+  <section id="s-predict" class="block hide">
+    <span class="micro">Step 2 of 3. Predict the room</span>
+    <hr class="rule">
+    <h3 id="pred-question" class="accent-rule"></h3>
+    <div style="margin-top:26px">
+      <div class="pred-value"><span id="pred-num">50</span><span>%</span></div>
+      <input type="range" id="f-pred" min="0" max="100" value="50" step="1">
+      <div class="scale"><span>0</span><span>50</span><span>100</span></div>
+    </div>
+    <div class="block">
+      <button class="btn" id="do-pred">Next</button>
+    </div>
+  </section>
+
+  <!-- REASON -->
+  <section id="s-reason" class="block hide">
+    <span class="micro">Step 3 of 3. State your reasoning</span>
+    <hr class="rule">
+    <p class="tiny" id="reason-ctx"></p>
+    <div class="field" style="margin-top:14px">
+      <textarea id="f-comment" maxlength="500" placeholder="Say why. Anonymous to everyone who reads this."></textarea>
+      <div class="count"><span id="c-comment">0</span> / 500</div>
+    </div>
+    <button class="btn accent" id="do-submit">Submit ruling and unlock</button>
+    <button class="btn ghost" id="do-skip">Skip and unlock</button>
+    <p class="tiny" id="reason-err" style="margin-top:12px;color:var(--accent)"></p>
+  </section>
+
+  <!-- RESULT -->
+  <section id="s-result" class="block hide">
+    <div class="row">
+      <span class="micro accent">Ruling delivered</span>
+      <span class="mono" id="res-serial" style="color:var(--muted)"></span>
+    </div>
+    <hr class="rule hard">
+    <div id="res-stamp"></div>
+    <div class="big-pct"><span id="res-pct">0</span><span>%</span></div>
+    <p id="res-line" style="margin-top:12px;font-size:17px"></p>
+    <hr class="perf">
+    <span class="micro">The full split</span>
+    <div id="res-bars" style="margin-top:14px"></div>
+    <div class="mono" id="res-total" style="color:var(--muted)"></div>
+    <hr class="perf">
+    <span class="micro">Your prediction</span>
+    <p id="res-pred" style="margin-top:10px;font-size:17px"></p>
+    <div class="barcode" id="res-barcode"></div>
+    <hr class="perf">
+    <div class="row">
+      <span class="micro">The reasoning</span>
+      <span class="micro" id="res-ccount"></span>
+    </div>
+    <div id="res-comments" style="margin-top:16px"></div>
+    <hr class="rule">
+    <button class="btn" id="do-share-res">Share this case</button>
+    <button class="btn ghost" id="do-refresh">Refresh the tally</button>
+    <button class="btn ghost" id="do-new">File your own case</button>
+    <p class="tiny" id="res-err" style="margin-top:12px;color:var(--accent)"></p>
+  </section>
+
+  <!-- NOTICE -->
+  <section id="s-notice" class="block hide">
+    <h2 id="notice-title">That is everything.</h2>
+    <p class="lede" id="notice-body" style="margin-top:12px"></p>
+    <hr class="perf">
+    <button class="btn ghost" id="do-notice-new">File a case of your own</button>
+  </section>
+
+</main>
+
+<footer>
+  <div class="row">
+    <span class="micro">The Public Inquiry</span>
+    <span class="micro"><a href="https://x.com/cyphaStats" target="_blank" rel="noopener">@cyphaStats</a></span>
+  </div>
+  <p class="tiny" style="margin-top:12px">Rulings are anonymous to everyone who reads a case. Comments are never stored next to anything that identifies you.</p>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- constants ---------------- */
+var OPT_COLORS = ["var(--o0)","var(--o1)","var(--o2)","var(--o3)"];
+var PRESETS = [
+  { q:"Who is at fault?",        o:["Person A","Person B","Both","Neither"] },
+  { q:"What do you think about this?", o:["Agree","Disagree","No strong feeling"] },
+  { q:"Was this okay?",          o:["Fine","Not fine","Depends"] },
+  { q:"Do you agree?",           o:["Yes","No"] },
+  { q:"Write your own",          o:null }
+];
+
+/* ---------------- state ---------------- */
+var S = {
+  caseId:null, hostKey:null, kase:null,
+  choice:null, prediction:50, voteId:null, results:null, isHost:false
+};
+
+/* ---------------- helpers ---------------- */
+function $(id){ return document.getElementById(id); }
+function show(id){
+  ["s-boot","s-build","s-filed","s-vote","s-predict","s-reason","s-result","s-notice"]
+    .forEach(function(s){ $(s).classList.toggle("hide", s !== id); });
+  window.scrollTo(0,0);
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function setMast(l,r){ $("mh-left").textContent = l; $("mh-right").textContent = r; }
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+
+function api(path, opts){
+  return fetch(path, opts).then(function(r){
+    return r.json().catch(function(){ return { ok:false, error:"The server said something we could not read." }; })
+      .then(function(j){ if(!r.ok || !j.ok){ var e = new Error(j.error || "Something went wrong."); e.payload = j; throw e; } return j; });
+  });
+}
+function post(path, body){
+  return api(path, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) });
+}
+
+/* barcode drawn from the case id so it is at least honest about being data */
+function barcode(el, seed){
+  if(!el) return;
+  var s = String(seed || "inquiry"), html = '<div class="barcode-strip">';
+  for(var i=0;i<58;i++){
+    var c = s.charCodeAt(i % s.length) + i*7;
+    var w = (c % 4) + 1;
+    var on = (c % 3) !== 0;
+    html += '<i style="width:'+w+'px;opacity:'+(on?1:0)+'"></i>';
+  }
+  el.innerHTML = html + "</div>";
+}
+
+/* ---------------- routing ---------------- */
+/* #<caseId>            guest link
+   #<caseId>k<hostKey>  host link, the k is a separator the id alphabet excludes */
+function parseHash(){
+  var h = (location.hash || "").replace(/^#/, "").trim().toLowerCase();
+  if(!h) return null;
+  var m = h.match(/^([23456789abcdefghjmnpqrstuvwxyz]{8})(?:k([23456789abcdefghjmnpqrstuvwxyz]{20}))?$/);
+  if(!m) return null;
+  return { id:m[1], key:m[2] || null };
+}
+
+function boot(){
+  var route = parseHash();
+  /* Trap 2. A tab that arrived through a shared link is a guest tab forever.
+     If anything fails it gets a plain notice, never the filing form. */
+  if(route) ssSet("pi_guest","1");
+  var isGuest = ssGet("pi_guest") === "1";
+
+  if(!route){
+    if(isGuest){
+      notice("That is everything.","The case you came from is done with you. You can file one of your own if you like.");
+    } else {
+      startBuild();
+    }
+    return;
+  }
+
+  S.caseId = route.id;
+  S.hostKey = route.key;
+  setMast("Case " + route.id.toUpperCase(), route.key ? "Host" : "Juror");
+
+  var known = lsGet("pi_v_" + route.id);
+  if(known){
+    S.voteId = known;
+    loadResults(true);
+    return;
+  }
+
+  show("s-boot");
+  api("/api/case?id=" + encodeURIComponent(route.id)).then(function(j){
+    S.kase = j;
+    renderCase();
+  }).catch(function(e){
+    notice("File not found.", e.message + " The link may have been cut short on the way to you.");
+  });
+}
+
+function notice(title, body){
+  $("notice-title").textContent = title;
+  $("notice-body").textContent = body;
+  setMast("Registry","Closed");
+  show("s-notice");
+}
+
+/* ---------------- build ---------------- */
+function startBuild(){
+  ssSet("pi_guest","0");
+  setMast("Filing Desk","Open");
+  renderPresets();
+  if(!$("f-options").children.length){ addOption("Person A"); addOption("Person B"); }
+  show("s-build");
+}
+
+function renderPresets(){
+  var wrap = $("q-presets");
+  if(wrap.children.length) return;
+  PRESETS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = p.q;
+    b.setAttribute("aria-pressed","false");
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(wrap.children, function(c){ c.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true");
+      if(p.o){
+        $("f-question").value = p.q;
+        $("f-options").innerHTML = "";
+        p.o.forEach(addOption);
+      } else {
+        $("f-question").value = "";
+        $("f-question").focus();
+      }
+      count("f-question","c-question");
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function addOption(value){
+  var box = $("f-options");
+  if(box.children.length >= 4) return;
+  var row = document.createElement("div");
+  row.className = "opt-row";
+  var n = box.children.length + 1;
+  row.innerHTML = '<span class="idx">' + n + '</span>' +
+    '<input type="text" maxlength="60" placeholder="Option ' + n + '">' +
+    '<button type="button" class="x" aria-label="Remove option">&times;</button>';
+  row.querySelector("input").value = value || "";
+  row.querySelector(".x").addEventListener("click", function(){
+    if(box.children.length <= 2) return;
+    row.remove(); renumber();
+  });
+  box.appendChild(row);
+  renumber();
+}
+function renumber(){
+  Array.prototype.forEach.call($("f-options").children, function(row,i){
+    row.querySelector(".idx").textContent = i + 1;
+    row.querySelector("input").placeholder = "Option " + (i + 1);
+  });
+  $("add-option").style.display = $("f-options").children.length >= 4 ? "none" : "";
+}
+
+function count(inputId, outId){
+  var el = $(inputId);
+  $(outId).textContent = el.value.trim().length;
+}
+
+function fileCase(){
+  var btn = $("do-file"), err = $("build-err");
+  err.textContent = "";
+  var evidence = $("f-evidence").value.trim();
+  var question = $("f-question").value.trim();
+  var options = Array.prototype.map.call($("f-options").querySelectorAll("input"), function(i){
+    return i.value.trim();
+  }).filter(Boolean);
+
+  if(evidence.length < 10){ err.textContent = "The evidence needs a bit more than that."; return; }
+  if(question.length < 3){ err.textContent = "Every case needs a question."; return; }
+  if(options.length < 2){ err.textContent = "Give the public at least two options."; return; }
+
+  btn.disabled = true; btn.textContent = "Filing...";
+  post("/api/case", { evidence:evidence, question:question, options:options })
+    .then(function(j){
+      lsSet("pi_host_" + j.id, j.hostKey);
+      S.caseId = j.id; S.hostKey = j.hostKey;
+      var base = location.origin + location.pathname;
+      $("filed-serial").textContent = j.serial;
+      $("filed-link").textContent = base + "#" + j.id;
+      setMast("Case " + j.id.toUpperCase(), "Host");
+      show("s-filed");
+    })
+    .catch(function(e){ err.textContent = e.message; })
+    .then(function(){ btn.disabled = false; btn.textContent = "File the case"; });
+}
+
+/* ---------------- vote ---------------- */
+function renderCase(){
+  var k = S.kase;
+  $("vote-serial").textContent = k.serial || "";
+  $("vote-evidence").textContent = k.evidence;
+  $("vote-question").textContent = k.question;
+  var box = $("vote-options");
+  box.innerHTML = "";
+  k.options.forEach(function(opt,i){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "choice"; b.setAttribute("aria-pressed","false");
+    b.innerHTML = '<span class="mark"></span><span></span>';
+    b.lastChild.textContent = opt;
+    b.addEventListener("click", function(){
+      S.choice = i;
+      Array.prototype.forEach.call(box.children, function(c,j){
+        c.setAttribute("aria-pressed", j === i ? "true" : "false");
+      });
+      $("do-side").disabled = false;
+    });
+    box.appendChild(b);
+  });
+  show("s-vote");
+}
+
+function toPredict(){
+  if(S.choice === null) return;
+  $("pred-question").textContent =
+    'Out of everyone who rules on this, what percent do you think picked "' + S.kase.options[S.choice] + '"?';
+  $("f-pred").value = S.prediction;
+  $("pred-num").textContent = S.prediction;
+  show("s-predict");
+}
+
+function toReason(){
+  $("reason-ctx").textContent =
+    'You picked "' + S.kase.options[S.choice] + '" and you reckon ' + S.prediction +
+    '% of the room agrees. Last thing, then the file opens.';
+  show("s-reason");
+}
+
+function submitVote(withComment){
+  var err = $("reason-err");
+  err.textContent = "";
+  var btn = withComment ? $("do-submit") : $("do-skip");
+  var original = btn.textContent;
+  $("do-submit").disabled = true; $("do-skip").disabled = true;
+  btn.textContent = "Recording...";
+
+  post("/api/vote", {
+    id: S.caseId,
+    choice: S.choice,
+    prediction: S.prediction,
+    comment: withComment ? $("f-comment").value.trim() : ""
+  }).then(function(j){
+    if(j.voteId){ S.voteId = j.voteId; lsSet("pi_v_" + S.caseId, j.voteId); }
+    if(j.alreadyVoted && !j.you) j.you = { choice:S.choice, prediction:S.prediction };
+    S.results = j;
+    S.isHost = Boolean(S.hostKey);
+    renderResults(j);
+  }).catch(function(e){
+    /* Never swallow a submission. Their text stays in the box and they retry. */
+    err.textContent = e.message;
+  }).then(function(){
+    $("do-submit").disabled = false; $("do-skip").disabled = false;
+    btn.textContent = original;
+  });
+}
+
+/* ---------------- results ---------------- */
+function loadResults(initial){
+  if(initial) show("s-boot");
+  var url = "/api/results?id=" + encodeURIComponent(S.caseId) + "&v=" + encodeURIComponent(S.voteId);
+  if(S.hostKey) url += "&k=" + encodeURIComponent(S.hostKey);
+  return api(url).then(function(j){
+    S.kase = S.kase || { options:j.options, question:j.question, serial:"" };
+    S.results = j;
+    S.isHost = Boolean(j.isHost);
+    renderResults(j);
+  }).catch(function(e){
+    if(initial){
+      /* Their stored vote id is stale or the case is gone. Guests never fall
+         through to the filing form. */
+      notice("That is everything.", e.message);
+    } else {
+      $("res-err").textContent = e.message;
+    }
+  });
+}
+
+function verdictFor(off){
+  if(off <= 5)  return "You read the room exactly.";
+  if(off <= 12) return "Close. You know these people.";
+  if(off <= 25) return "Somewhat adrift.";
+  if(off <= 45) return "You do not know this room at all.";
+  return "Spectacularly wrong. Worth framing.";
+}
+
+function renderResults(j){
+  var opts = (S.kase && S.kase.options) || j.options || [];
+  var you = j.you || { choice:S.choice, prediction:S.prediction };
+  var pct = (j.percents && j.percents[you.choice] != null) ? j.percents[you.choice] : 0;
+  var total = j.total || 0;
+
+  $("res-serial").textContent = (S.kase && S.kase.serial) || "";
+  setMast("Case " + String(S.caseId).toUpperCase(), S.isHost ? "Host" : "Ruled");
+
+  /* stamp */
+  var top = Math.max.apply(null, j.counts && j.counts.length ? j.counts : [0]);
+  var mine = (j.counts && j.counts[you.choice]) || 0;
+  var tied = (j.counts || []).filter(function(c){ return c === top; }).length > 1;
+  var label, cool = false;
+  if(total <= 1){ label = "First ruling on file"; cool = true; }
+  else if(tied && mine === top){ label = "Dead even"; cool = true; }
+  else if(mine === top){ label = "Majority"; }
+  else { label = "Minority"; }
+  $("res-stamp").innerHTML = '<span class="stamp' + (cool ? " cool" : "") + '">' + esc(label) + "</span>";
+
+  $("res-pct").textContent = pct;
+  $("res-line").innerHTML = total <= 1
+    ? 'You are the first person to rule on this. Send it to somebody who will disagree.'
+    : esc(pct + "% of the room picked ") + "<b>" + esc(opts[you.choice] || "") + "</b>" + esc(", same as you.");
+
+  /* bars */
+  var bars = $("res-bars");
+  bars.innerHTML = "";
+  opts.forEach(function(opt,i){
+    var p = (j.percents && j.percents[i]) || 0;
+    var n = (j.counts && j.counts[i]) || 0;
+    var row = document.createElement("div");
+    row.className = "bar-row" + (i === you.choice ? " mine" : "");
+    row.innerHTML =
+      '<div class="bar-head"><b></b><em>' + p + '% &middot; ' + n + '</em></div>' +
+      '<div class="bar"><i style="width:' + p + '%;background:' + OPT_COLORS[i % 4] + '"></i></div>';
+    row.querySelector("b").textContent = opt;
+    bars.appendChild(row);
+  });
+  $("res-total").textContent = total + (total === 1 ? " ruling on file" : " rulings on file");
+
+  /* prediction */
+  var off = Math.abs((you.prediction || 0) - pct);
+  $("res-pred").innerHTML =
+    "You said <b>" + esc(String(you.prediction)) + "%</b>. The room said <b>" + esc(String(pct)) + "%</b>. " +
+    esc(verdictFor(off));
+  barcode($("res-barcode"), S.caseId + "-" + you.prediction);
+
+  /* comments */
+  var cbox = $("res-comments");
+  var list = j.comments || [];
+  $("res-ccount").textContent = list.length + (list.length === 1 ? " entry" : " entries");
+  cbox.innerHTML = "";
+  if(!list.length){
+    cbox.innerHTML = '<p class="tiny">Nobody has said why yet. The floor is open.</p>';
+  }
+  list.forEach(function(c){
+    var el = document.createElement("div");
+    el.className = "comment";
+    el.style.borderLeftColor = OPT_COLORS[c.choice % 4];
+    var mineTag = c.id === S.voteId ? ' <span class="micro">you</span>' : "";
+    el.innerHTML =
+      '<div class="who"><span class="micro" style="color:' + OPT_COLORS[c.choice % 4] + '"></span>' + mineTag + '</div>' +
+      '<div class="txt"></div>' +
+      '<div class="acts"></div>';
+    el.querySelector(".who .micro").textContent = "Voted " + (opts[c.choice] || "");
+    el.querySelector(".txt").textContent = c.text;
+
+    var acts = el.querySelector(".acts");
+    if(c.id !== S.voteId){
+      var rep = document.createElement("button");
+      rep.className = "linkbtn"; rep.textContent = "Report";
+      rep.addEventListener("click", function(){
+        rep.disabled = true; rep.textContent = "Reported";
+        post("/api/report", { id:S.caseId, v:S.voteId, target:c.id }).catch(function(){
+          rep.textContent = "Report failed";
+        });
+      });
+      acts.appendChild(rep);
+    }
+    if(S.isHost){
+      var del = document.createElement("button");
+      del.className = "linkbtn"; del.textContent = "Delete";
+      del.addEventListener("click", function(){
+        del.disabled = true; del.textContent = "Deleting...";
+        post("/api/moderate", { id:S.caseId, key:S.hostKey, target:c.id, action:"delete" })
+          .then(function(){ el.classList.add("gone"); del.textContent = "Deleted"; })
+          .catch(function(e){ del.disabled = false; del.textContent = "Delete failed"; });
+      });
+      acts.appendChild(del);
+    }
+    cbox.appendChild(el);
+  });
+
+  if(j.note){ $("res-err").textContent = j.note; } else { $("res-err").textContent = ""; }
+  show("s-result");
+}
+
+/* ---------------- share ---------------- */
+function guestLink(){
+  return location.origin + location.pathname + "#" + S.caseId;
+}
+function copyText(text, btn){
+  var done = function(){
+    var t = btn.textContent; btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = t; }, 1600);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text); done(); });
+  } else { legacyCopy(text); done(); }
+}
+function legacyCopy(text){
+  var ta = document.createElement("textarea");
+  ta.value = text; ta.setAttribute("readonly","");
+  ta.style.position = "fixed"; ta.style.top = "-1000px";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+}
+function shareLink(btn){
+  var url = guestLink();
+  var text = (S.kase && S.kase.question) ? S.kase.question : "Rule on this.";
+  if(navigator.share){
+    navigator.share({ title:"The Public Inquiry", text:text, url:url }).catch(function(){});
+  } else {
+    copyText(url, btn);
+  }
+}
+
+/* ---------------- wiring ---------------- */
+$("f-evidence").addEventListener("input", function(){ count("f-evidence","c-evidence"); });
+$("f-question").addEventListener("input", function(){ count("f-question","c-question"); });
+$("f-comment").addEventListener("input", function(){ count("f-comment","c-comment"); });
+$("add-option").addEventListener("click", function(){ addOption(""); });
+$("do-file").addEventListener("click", fileCase);
+
+$("do-copy").addEventListener("click", function(){ copyText(guestLink(), this); });
+$("do-share").addEventListener("click", function(){ shareLink(this); });
+$("do-open-case").addEventListener("click", function(){
+  location.hash = S.caseId + (S.hostKey ? "k" + S.hostKey : "");
+  ssSet("pi_guest","0");
+  boot();
+});
+
+$("do-side").addEventListener("click", toPredict);
+$("f-pred").addEventListener("input", function(){
+  S.prediction = parseInt(this.value, 10) || 0;
+  $("pred-num").textContent = S.prediction;
+});
+$("do-pred").addEventListener("click", toReason);
+$("do-submit").addEventListener("click", function(){ submitVote(true); });
+$("do-skip").addEventListener("click", function(){ submitVote(false); });
+
+$("do-share-res").addEventListener("click", function(){ shareLink(this); });
+$("do-refresh").addEventListener("click", function(){
+  var b = this, t = b.textContent;
+  b.disabled = true; b.textContent = "Counting...";
+  loadResults(false).then(function(){ b.disabled = false; b.textContent = t; });
+});
+$("do-new").addEventListener("click", function(){
+  location.hash = ""; history.replaceState(null,"",location.pathname);
+  S.caseId = null; S.hostKey = null; S.kase = null; S.choice = null;
+  S.prediction = 50; S.voteId = null; S.results = null;
+  startBuild();
+});
+$("do-notice-new").addEventListener("click", function(){
+  location.hash = ""; history.replaceState(null,"",location.pathname);
+  startBuild();
+});
+
+window.addEventListener("hashchange", boot);
+boot();
+
+})();
+</script>
+</body>
+</html>

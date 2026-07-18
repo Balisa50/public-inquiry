@@ -1,0 +1,10 @@
+{
+  "name": "public-inquiry",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "You file a case. The public rules on it. Nobody can lurk.",
+  "dependencies": {
+    "@vercel/blob": "^2.6.1"
+  }
+}
