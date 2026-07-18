@@ -851,9 +851,12 @@ $("do-file").addEventListener("click", fileCase);
 $("do-copy").addEventListener("click", function(){ copyText(guestLink(), this); });
 $("do-share").addEventListener("click", function(){ shareLink(this); });
 $("do-open-case").addEventListener("click", function(){
-  location.hash = S.caseId + (S.hostKey ? "k" + S.hostKey : "");
   ssSet("pi_guest","0");
-  boot();
+  /* Navigate with the bare case id. The host key stays on the device rather
+     than sitting in the address bar, where copying it would hand moderation to
+     whoever the link reached. Setting the hash fires boot once via hashchange. */
+  if(location.hash.replace(/^#/,"") === S.caseId){ boot(); }
+  else { location.hash = S.caseId; }
 });
 
 $("do-side").addEventListener("click", toPredict);
