@@ -299,7 +299,7 @@ footer a{color:var(--muted)}
     <button class="btn" id="do-copy">Copy the link</button>
     <button class="btn ghost" id="do-share">Share</button>
     <hr class="rule">
-    <p class="tiny">This link is yours and it carries your moderation key, so you can delete any comment on the case. The version you share with other people strips the key out automatically when you use the buttons above.</p>
+    <p class="tiny">That is the public link, safe to send anywhere. Your moderation key is held in this browser, so open the case from this device and you get a delete button on every comment.</p>
     <button class="btn ghost" id="do-open-case">Go to the case</button>
   </section>
 
@@ -488,8 +488,10 @@ function boot(){
   }
 
   S.caseId = route.id;
-  S.hostKey = route.key;
-  setMast("Case " + route.id.toUpperCase(), route.key ? "Host" : "Juror");
+  /* The key can ride in the link, but the host filed from this browser so it is
+     also on disk here. Either one keeps their delete buttons. */
+  S.hostKey = route.key || lsGet("pi_host_" + route.id) || null;
+  setMast("Case " + route.id.toUpperCase(), S.hostKey ? "Host" : "Juror");
 
   var known = lsGet("pi_v_" + route.id);
   if(known){
@@ -521,6 +523,13 @@ function startBuild(){
   renderPresets();
   if(!$("f-options").children.length){ addOption("Person A"); addOption("Person B"); }
   show("s-build");
+}
+
+function resetBuild(){
+  $("f-evidence").value = ""; $("f-question").value = ""; $("f-comment").value = "";
+  $("f-options").innerHTML = ""; $("build-err").textContent = "";
+  count("f-evidence","c-evidence"); count("f-question","c-question"); count("f-comment","c-comment");
+  Array.prototype.forEach.call($("q-presets").children, function(c){ c.setAttribute("aria-pressed","false"); });
 }
 
 function renderPresets(){
@@ -866,6 +875,7 @@ $("do-new").addEventListener("click", function(){
   location.hash = ""; history.replaceState(null,"",location.pathname);
   S.caseId = null; S.hostKey = null; S.kase = null; S.choice = null;
   S.prediction = 50; S.voteId = null; S.results = null;
+  resetBuild();
   startBuild();
 });
 $("do-notice-new").addEventListener("click", function(){
