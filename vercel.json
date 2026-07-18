@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/c/:id", "destination": "/api/page?id=:id" }
+  ],
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "index.html"
+    }
+  }
+}

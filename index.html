@@ -3,13 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Public Inquiry</title>
-<meta name="description" content="You file a case. The public rules on it. Nobody can lurk.">
 <meta name="theme-color" content="#F2EEE3">
+<!--OG--><title>The Public Inquiry</title>
+<meta name="description" content="You file a case. The public rules on it. Nobody can lurk.">
 <meta property="og:title" content="The Public Inquiry">
 <meta property="og:description" content="You file a case. The public rules on it. Nobody can lurk.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="/api/og">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/api/og"><!--/OG-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -203,6 +207,27 @@ input[type=range]::-moz-range-thumb{
 .bar i{display:block;height:100%;background:var(--ink);transition:width .5s ease}
 .bar-row.mine .bar-head b::after{content:" \2190 you";font-family:var(--mono);font-size:10.5px;color:var(--muted)}
 
+/* the screenshot region. tightened up so the whole verdict lands in one grab */
+#shot{padding-bottom:4px}
+.shot-line{margin:10px 0 20px;font-size:17px;line-height:1.35}
+.shot-bars{margin-top:2px}
+.shot-verdict{
+  font-family:var(--serif);font-size:23px;line-height:1.25;margin:14px 0 4px;
+}
+.shot-foot{padding-top:4px}
+.scoreline{display:flex;align-items:flex-end;margin-top:16px}
+.scoregap{flex:1}
+.scorenum{
+  font-family:var(--serif);font-size:40px;line-height:1;margin-top:4px;white-space:nowrap;
+}
+.scorenum span{font-size:.45em;font-family:var(--sans);font-weight:700;margin-left:1px}
+.scorenum.accent-num{color:var(--accent)}
+.minority-flag{
+  display:inline-block;font-family:var(--sans);font-size:12px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:var(--paper);
+  padding:5px 9px;margin-bottom:10px;
+}
+
 .comment{border-left:3px solid var(--rule);padding:0 0 0 14px;margin:0 0 20px}
 .comment .who{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
 .comment .txt{font-size:15.5px;line-height:1.48;white-space:pre-wrap;word-break:break-word}
@@ -299,7 +324,14 @@ footer a{color:var(--muted)}
     <button class="btn" id="do-copy">Copy the link</button>
     <button class="btn ghost" id="do-share">Share</button>
     <hr class="rule">
-    <p class="tiny">That is the public link, safe to send anywhere. Your moderation key is held in this browser, so open the case from this device and you get a delete button on every comment.</p>
+    <p class="tiny">That is the public link, safe to send anywhere. Your moderation key is held in this browser, so from this device you get a delete button on every comment.</p>
+    <button class="linkbtn" id="show-hostlink" type="button">Moving to another phone? Keep your moderation link</button>
+    <div id="hostlink-wrap" class="hide">
+      <div class="linkbox"><code id="filed-hostlink"></code></div>
+      <button class="btn ghost" id="do-copy-host">Copy the moderation link</button>
+      <p class="tiny">Keep this one to yourself. Anyone who opens it can delete comments on your case.</p>
+    </div>
+    <hr class="rule">
     <button class="btn ghost" id="do-open-case">Go to the case</button>
   </section>
 
@@ -352,22 +384,48 @@ footer a{color:var(--muted)}
 
   <!-- RESULT -->
   <section id="s-result" class="block hide">
-    <div class="row">
-      <span class="micro accent">Ruling delivered</span>
-      <span class="mono" id="res-serial" style="color:var(--muted)"></span>
+
+    <!-- everything inside #shot is sized to land in one phone screenshot -->
+    <div id="shot">
+      <div class="row">
+        <span class="micro accent">Ruling delivered</span>
+        <span class="mono" id="res-serial" style="color:var(--muted)"></span>
+      </div>
+      <hr class="rule hard">
+      <div id="res-stamp"></div>
+      <div class="big-pct"><span id="res-pct">0</span><span>%</span></div>
+      <p id="res-line" class="shot-line"></p>
+
+      <div id="res-bars" class="shot-bars"></div>
+
+      <hr class="perf">
+      <div class="scoreline">
+        <div>
+          <span class="micro">You said</span>
+          <div class="scorenum" id="res-said">0<span>%</span></div>
+        </div>
+        <div class="scoregap"></div>
+        <div>
+          <span class="micro">They said</span>
+          <div class="scorenum" id="res-they">0<span>%</span></div>
+        </div>
+        <div class="scoregap"></div>
+        <div>
+          <span class="micro">Accuracy</span>
+          <div class="scorenum accent-num" id="res-score">0</div>
+        </div>
+      </div>
+      <p id="res-verdict" class="shot-verdict"></p>
+
+      <div class="barcode" id="res-barcode"></div>
+      <div class="row shot-foot">
+        <span class="micro">thepublicinquiry.vercel.app</span>
+        <span class="micro" id="res-total"></span>
+      </div>
     </div>
-    <hr class="rule hard">
-    <div id="res-stamp"></div>
-    <div class="big-pct"><span id="res-pct">0</span><span>%</span></div>
-    <p id="res-line" style="margin-top:12px;font-size:17px"></p>
-    <hr class="perf">
-    <span class="micro">The full split</span>
-    <div id="res-bars" style="margin-top:14px"></div>
-    <div class="mono" id="res-total" style="color:var(--muted)"></div>
-    <hr class="perf">
-    <span class="micro">Your prediction</span>
-    <p id="res-pred" style="margin-top:10px;font-size:17px"></p>
-    <div class="barcode" id="res-barcode"></div>
+
+    <p class="tiny" id="res-record" style="margin-top:16px"></p>
+
     <hr class="perf">
     <div class="row">
       <span class="micro">The reasoning</span>
@@ -461,18 +519,33 @@ function barcode(el, seed){
 }
 
 /* ---------------- routing ---------------- */
-/* #<caseId>            guest link
-   #<caseId>k<hostKey>  host link, the k is a separator the id alphabet excludes */
-function parseHash(){
-  var h = (location.hash || "").replace(/^#/, "").trim().toLowerCase();
-  if(!h) return null;
-  var m = h.match(/^([23456789abcdefghjmnpqrstuvwxyz]{8})(?:k([23456789abcdefghjmnpqrstuvwxyz]{20}))?$/);
-  if(!m) return null;
-  return { id:m[1], key:m[2] || null };
+/* /c/<caseId>        the share link. a real path, because a hash fragment never
+                      reaches the server and so cannot drive a preview card.
+   /c/<caseId>#k<key> the host's moderation link. the key sits in the fragment
+                      so it is never sent to the server or written to a log.
+   #<caseId>          the original form, still honoured. */
+var ID_RE = "[23456789abcdefghjmnpqrstuvwxyz]{8}";
+var KEY_RE = "[23456789abcdefghjmnpqrstuvwxyz]{20}";
+
+function parseRoute(){
+  var hash = (location.hash || "").replace(/^#/, "").trim().toLowerCase();
+  var path = location.pathname.match(new RegExp("^/c/(" + ID_RE + ")/?$"));
+  if(path){
+    var k = hash.match(new RegExp("^k(" + KEY_RE + ")$"));
+    return { id:path[1], key:k ? k[1] : null };
+  }
+  var m = hash.match(new RegExp("^(" + ID_RE + ")(?:k(" + KEY_RE + "))?$"));
+  return m ? { id:m[1], key:m[2] || null } : null;
+}
+
+function go(path){
+  if(location.pathname + location.hash === path){ boot(); return; }
+  history.pushState(null, "", path);
+  boot();
 }
 
 function boot(){
-  var route = parseHash();
+  var route = parseRoute();
   /* Trap 2. A tab that arrived through a shared link is a guest tab forever.
      If anything fails it gets a plain notice, never the filing form. */
   if(route) ssSet("pi_guest","1");
@@ -604,9 +677,9 @@ function fileCase(){
     .then(function(j){
       lsSet("pi_host_" + j.id, j.hostKey);
       S.caseId = j.id; S.hostKey = j.hostKey;
-      var base = location.origin + location.pathname;
       $("filed-serial").textContent = j.serial;
-      $("filed-link").textContent = base + "#" + j.id;
+      $("filed-link").textContent = guestLink();
+      $("filed-hostlink").textContent = hostLink();
       setMast("Case " + j.id.toUpperCase(), "Host");
       show("s-filed");
     })
@@ -704,12 +777,40 @@ function loadResults(initial){
   });
 }
 
-function verdictFor(off){
-  if(off <= 5)  return "You read the room exactly.";
-  if(off <= 12) return "Close. You know these people.";
-  if(off <= 25) return "Somewhat adrift.";
-  if(off <= 45) return "You do not know this room at all.";
+/* Accuracy is how close the prediction landed, as a score out of 100, so it
+   reads like a mark on a form rather than a margin of error. */
+function verdictFor(score){
+  if(score >= 97) return "The room has no secrets from you.";
+  if(score >= 88) return "You read the room exactly.";
+  if(score >= 75) return "Close. You know these people.";
+  if(score >= 55) return "Somewhat adrift.";
+  if(score >= 30) return "You do not know this room at all.";
   return "Spectacularly wrong. Worth framing.";
+}
+
+/* A running record across every case ruled on in this browser. This is the bit
+   that makes it a game rather than a one off poll. */
+function readRecord(){
+  try{
+    var r = JSON.parse(lsGet("pi_record") || "{}");
+    return { n:Number(r.n) || 0, sum:Number(r.sum) || 0, cases:r.cases || {} };
+  }catch(e){ return { n:0, sum:0, cases:{} }; }
+}
+function recordScore(caseId, score){
+  var r = readRecord();
+  if(r.cases[caseId] != null) return r;      // never count the same case twice
+  r.cases[caseId] = score; r.n += 1; r.sum += score;
+  lsSet("pi_record", JSON.stringify(r));
+  return r;
+}
+function renderRecord(r){
+  if(r.n < 2){ $("res-record").textContent = ""; return; }
+  var avg = Math.round(r.sum / r.n);
+  $("res-record").textContent =
+    "Your record so far. " + r.n + " cases ruled on, " + avg + " average accuracy. " +
+    (avg >= 80 ? "The file notes an unsettling talent for this."
+     : avg >= 55 ? "Broadly in touch with the public."
+     : "The file notes a persistent inability to read a room.");
 }
 
 function renderResults(j){
@@ -733,9 +834,14 @@ function renderResults(j){
   $("res-stamp").innerHTML = '<span class="stamp' + (cool ? " cool" : "") + '">' + esc(label) + "</span>";
 
   $("res-pct").textContent = pct;
+  /* Being in a small minority is the thing people screenshot, so say the number
+     back to them in the plainest possible words. */
+  var flag = (total > 3 && mine !== top && pct <= 25)
+    ? '<span class="minority-flag">You are in the ' + pct + '%</span><br>' : "";
   $("res-line").innerHTML = total <= 1
     ? 'You are the first person to rule on this. Send it to somebody who will disagree.'
-    : esc(pct + "% of the room picked ") + "<b>" + esc(opts[you.choice] || "") + "</b>" + esc(", same as you.");
+    : flag + esc("picked ") + "<b>" + esc(opts[you.choice] || "") + "</b>" +
+      esc(", along with " + (mine === 1 ? "nobody else" : (mine - 1) + " other" + (mine === 2 ? "" : "s")) + ".");
 
   /* bars */
   var bars = $("res-bars");
@@ -753,12 +859,14 @@ function renderResults(j){
   });
   $("res-total").textContent = total + (total === 1 ? " ruling on file" : " rulings on file");
 
-  /* prediction */
-  var off = Math.abs((you.prediction || 0) - pct);
-  $("res-pred").innerHTML =
-    "You said <b>" + esc(String(you.prediction)) + "%</b>. The room said <b>" + esc(String(pct)) + "%</b>. " +
-    esc(verdictFor(off));
+  /* prediction and score */
+  var score = Math.max(0, 100 - Math.abs((you.prediction || 0) - pct));
+  $("res-said").innerHTML = esc(String(you.prediction)) + "<span>%</span>";
+  $("res-they").innerHTML = esc(String(pct)) + "<span>%</span>";
+  $("res-score").textContent = score;
+  $("res-verdict").textContent = total <= 1 ? "Nothing to measure against yet." : verdictFor(score);
   barcode($("res-barcode"), S.caseId + "-" + you.prediction);
+  if(total > 1) renderRecord(recordScore(S.caseId, score));
 
   /* comments */
   var cbox = $("res-comments");
@@ -812,7 +920,10 @@ function renderResults(j){
 
 /* ---------------- share ---------------- */
 function guestLink(){
-  return location.origin + location.pathname + "#" + S.caseId;
+  return location.origin + "/c/" + S.caseId;
+}
+function hostLink(){
+  return location.origin + "/c/" + S.caseId + (S.hostKey ? "#k" + S.hostKey : "");
 }
 function copyText(text, btn){
   var done = function(){
@@ -850,13 +961,16 @@ $("do-file").addEventListener("click", fileCase);
 
 $("do-copy").addEventListener("click", function(){ copyText(guestLink(), this); });
 $("do-share").addEventListener("click", function(){ shareLink(this); });
+$("show-hostlink").addEventListener("click", function(){
+  $("hostlink-wrap").classList.toggle("hide");
+});
+$("do-copy-host").addEventListener("click", function(){ copyText(hostLink(), this); });
 $("do-open-case").addEventListener("click", function(){
   ssSet("pi_guest","0");
-  /* Navigate with the bare case id. The host key stays on the device rather
-     than sitting in the address bar, where copying it would hand moderation to
-     whoever the link reached. Setting the hash fires boot once via hashchange. */
-  if(location.hash.replace(/^#/,"") === S.caseId){ boot(); }
-  else { location.hash = S.caseId; }
+  /* Navigate to the bare case path. The key stays on the device rather than in
+     the address bar, where copying it would hand moderation to whoever the
+     link reached. */
+  go("/c/" + S.caseId);
 });
 
 $("do-side").addEventListener("click", toPredict);
@@ -874,18 +988,18 @@ $("do-refresh").addEventListener("click", function(){
   b.disabled = true; b.textContent = "Counting...";
   loadResults(false).then(function(){ b.disabled = false; b.textContent = t; });
 });
-$("do-new").addEventListener("click", function(){
-  location.hash = ""; history.replaceState(null,"",location.pathname);
+function freshCase(){
   S.caseId = null; S.hostKey = null; S.kase = null; S.choice = null;
-  S.prediction = 50; S.voteId = null; S.results = null;
+  S.prediction = 50; S.voteId = null; S.results = null; S.isHost = false;
+  $("hostlink-wrap").classList.add("hide");
   resetBuild();
-  startBuild();
-});
-$("do-notice-new").addEventListener("click", function(){
-  location.hash = ""; history.replaceState(null,"",location.pathname);
-  startBuild();
-});
+  ssSet("pi_guest","0");
+  go("/");
+}
+$("do-new").addEventListener("click", freshCase);
+$("do-notice-new").addEventListener("click", freshCase);
 
+window.addEventListener("popstate", boot);
 window.addEventListener("hashchange", boot);
 boot();
 

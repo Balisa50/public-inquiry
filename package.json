@@ -5,6 +5,7 @@
   "type": "module",
   "description": "You file a case. The public rules on it. Nobody can lurk.",
   "dependencies": {
-    "@vercel/blob": "^2.6.1"
+    "@vercel/blob": "^2.6.1",
+    "@vercel/og": "^0.11.1"
   }
 }
