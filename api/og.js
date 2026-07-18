@@ -60,18 +60,25 @@ export default async function handler(req) {
   const question = kase ? String(kase.question).slice(0, 110) : 'You file a case. The public rules on it.';
   const serial = kase ? kase.serial : 'THE PUBLIC INQUIRY';
   const options = kase ? kase.options.slice(0, 4) : ['Nobody can lurk'];
-  const qSize = question.length > 74 ? 54 : question.length > 42 ? 66 : 78;
+  const qSize = question.length > 74 ? 58 : question.length > 42 ? 72 : question.length > 20 ? 88 : 100;
 
-  const [serif, sans] = await Promise.all([
+  // A line of the actual story. Without it the card is all letterhead and no
+  // hook, and the whole point is that somebody taps it in a group chat.
+  let evidence = kase ? String(kase.evidence).replace(/\s+/g, ' ').trim() : '';
+  if (evidence.length > 128) evidence = evidence.slice(0, 127).replace(/\s+\S*$/, '') + '...';
+
+  const [serif, sans, sansBold] = await Promise.all([
     loadFont('Instrument+Serif'),
+    loadFont('Space+Grotesk:wght@400'),
     loadFont('Space+Grotesk:wght@700'),
   ]);
 
   const fonts = [];
   if (serif) fonts.push({ name: 'Instrument Serif', data: serif, style: 'normal', weight: 400 });
-  if (sans) fonts.push({ name: 'Space Grotesk', data: sans, style: 'normal', weight: 700 });
+  if (sans) fonts.push({ name: 'Space Grotesk', data: sans, style: 'normal', weight: 400 });
+  if (sansBold) fonts.push({ name: 'Space Grotesk', data: sansBold, style: 'normal', weight: 700 });
   const serifFamily = serif ? 'Instrument Serif' : 'serif';
-  const sansFamily = sans ? 'Space Grotesk' : 'sans-serif';
+  const sansFamily = sans || sansBold ? 'Space Grotesk' : 'sans-serif';
 
   const tree = el(
     'div',
@@ -97,7 +104,7 @@ export default async function handler(req) {
               {
                 fontFamily: sansFamily,
                 fontSize: '20px',
-                letterSpacing: '5px',
+                letterSpacing: '5px', fontWeight: 700,
                 color: MUTED,
                 display: 'flex',
               },
@@ -105,7 +112,7 @@ export default async function handler(req) {
             ),
             el(
               'div',
-              { fontFamily: sansFamily, fontSize: '20px', letterSpacing: '3px', color: MUTED, display: 'flex' },
+              { fontFamily: sansFamily, fontSize: '20px', letterSpacing: '3px', fontWeight: 700, color: MUTED, display: 'flex' },
               serial
             ),
           ]
@@ -119,6 +126,23 @@ export default async function handler(req) {
         { display: 'flex', flexDirection: 'column', borderLeft: `10px solid ${ACCENT}`, paddingLeft: '30px' },
         [
           el('div', { fontFamily: serifFamily, fontSize: `${qSize}px`, lineHeight: 1.12, display: 'flex' }, question),
+          ...(evidence
+            ? [
+                el(
+                  'div',
+                  {
+                    fontFamily: sansFamily,
+                    fontSize: '25px',
+                    lineHeight: 1.42,
+                    color: MUTED,
+                    marginTop: '20px',
+                    display: 'flex',
+                    maxWidth: '900px',
+                  },
+                  evidence
+                ),
+              ]
+            : []),
           el(
             'div',
             { display: 'flex', marginTop: '26px', flexWrap: 'wrap' },
@@ -128,7 +152,7 @@ export default async function handler(req) {
                 {
                   fontFamily: sansFamily,
                   fontSize: '22px',
-                  letterSpacing: '2px',
+                  letterSpacing: '2px', fontWeight: 700,
                   color: INK,
                   border: `2px solid ${INK}`,
                   padding: '9px 16px',
@@ -153,7 +177,7 @@ export default async function handler(req) {
             {
               fontFamily: sansFamily,
               fontSize: '26px',
-              letterSpacing: '4px',
+              letterSpacing: '4px', fontWeight: 700,
               color: ACCENT,
               border: `5px solid ${ACCENT}`,
               padding: '12px 20px',
@@ -164,7 +188,7 @@ export default async function handler(req) {
           ),
           el(
             'div',
-            { fontFamily: sansFamily, fontSize: '22px', letterSpacing: '3px', color: MUTED, display: 'flex' },
+            { fontFamily: sansFamily, fontSize: '22px', letterSpacing: '3px', fontWeight: 700, color: MUTED, display: 'flex' },
             'THEPUBLICINQUIRY.VERCEL.APP'
           ),
         ]

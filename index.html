@@ -838,10 +838,13 @@ function renderResults(j){
      back to them in the plainest possible words. */
   var flag = (total > 3 && mine !== top && pct <= 25)
     ? '<span class="minority-flag">You are in the ' + pct + '%</span><br>' : "";
+  var company = mine === 1
+    ? "You are the only one who picked <b>" + esc(opts[you.choice] || "") + "</b>."
+    : "You picked <b>" + esc(opts[you.choice] || "") + "</b>, along with " +
+      (mine - 1) + " other" + (mine === 2 ? "" : "s") + ".";
   $("res-line").innerHTML = total <= 1
     ? 'You are the first person to rule on this. Send it to somebody who will disagree.'
-    : flag + esc("picked ") + "<b>" + esc(opts[you.choice] || "") + "</b>" +
-      esc(", along with " + (mine === 1 ? "nobody else" : (mine - 1) + " other" + (mine === 2 ? "" : "s")) + ".");
+    : flag + company;
 
   /* bars */
   var bars = $("res-bars");
