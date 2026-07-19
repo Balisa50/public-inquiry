@@ -153,18 +153,32 @@ export async function blobUrl(pathname) {
  * costs one list() and zero content fetches. Only commented votes get read.
  *   c/<caseId>/v/<ts36>~<voteId>~<choice>~<prediction>~<c|n>.json
  */
-export function votePath(caseId, ts, voteId, choice, prediction, hasComment) {
+export function votePath(caseId, ts, voteId, choice, prediction, hasComment, choice2) {
   const t = ts.toString(36).padStart(9, '0');
-  return `c/${caseId}/v/${t}~${voteId}~${choice}~${prediction}~${hasComment ? 'c' : 'n'}.json`;
+  const c2 = Number.isInteger(choice2) && choice2 >= 0 ? choice2 : 'x';
+  return `c/${caseId}/v/${t}~${voteId}~${choice}~${prediction}~${hasComment ? 'c' : 'n'}~${c2}.json`;
 }
 
+/**
+ * Votes filed before the second question existed have five segments rather
+ * than six. They are still valid votes, so a missing segment means "did not
+ * answer" instead of a parse failure.
+ */
 export function parseVotePath(pathname) {
   const name = pathname.split('/').pop().replace(/\.json$/, '');
-  const [ts, voteId, choice, prediction, flag] = name.split('~');
+  const [ts, voteId, choice, prediction, flag, choice2] = name.split('~');
   const c = Number(choice);
   const p = Number(prediction);
   if (!voteId || !Number.isInteger(c) || !Number.isInteger(p)) return null;
-  return { ts, voteId, choice: c, prediction: p, hasComment: flag === 'c' };
+  const c2 = choice2 === undefined || choice2 === 'x' ? -1 : Number(choice2);
+  return {
+    ts,
+    voteId,
+    choice: c,
+    prediction: p,
+    hasComment: flag === 'c',
+    choice2: Number.isInteger(c2) ? c2 : -1,
+  };
 }
 
 /**
@@ -189,16 +203,26 @@ export async function aggregate(caseId, kase, opts = {}) {
   }
 
   const counts = new Array(kase.options.length).fill(0);
+  const q2opts = kase.q2?.options?.length || 0;
+  const counts2 = new Array(q2opts).fill(0);
+  let total2 = 0;
   const votes = [];
   for (const b of voteBlobs) {
     const v = parseVotePath(b.pathname);
     if (!v || v.choice < 0 || v.choice >= counts.length) continue;
     counts[v.choice] += 1;
+    if (q2opts && v.choice2 >= 0 && v.choice2 < q2opts) {
+      counts2[v.choice2] += 1;
+      total2 += 1;
+    }
     votes.push({ ...v, url: b.url });
   }
 
   const total = votes.length;
   const percents = counts.map((n) => (total ? Math.round((n / total) * 100) : 0));
+  // Percentages for the second question are out of the people who answered it,
+  // not out of everyone, since older votes predate the question entirely.
+  const percents2 = counts2.map((n) => (total2 ? Math.round((n / total2) * 100) : 0));
 
   // Newest first. ts36 is zero padded so a plain string sort is chronological.
   votes.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
@@ -227,12 +251,19 @@ export async function aggregate(caseId, kase, opts = {}) {
   ).filter(Boolean);
 
   const out = { total, counts, percents, comments };
+  if (q2opts) {
+    out.counts2 = counts2;
+    out.percents2 = percents2;
+    out.total2 = total2;
+  }
 
   // Lets a returning voter be re-identified from their own vote id without
-  // storing anything extra. Their choice and prediction are in the pathname.
+  // storing anything extra. Their answers and prediction are in the pathname.
   if (opts.voteId) {
     const mine = votes.find((v) => v.voteId === opts.voteId);
-    out.you = mine ? { choice: mine.choice, prediction: mine.prediction } : null;
+    out.you = mine
+      ? { choice: mine.choice, prediction: mine.prediction, choice2: mine.choice2 }
+      : null;
   }
 
   return out;

@@ -237,6 +237,21 @@ input[type=range]::-moz-range-thumb{
 .linkbtn.quiet.accent{color:var(--accent)}
 #link-card:not(.hide){margin-top:14px}
 
+.convert{margin-top:22px}
+.convert h2{margin:6px 0 8px}
+.convert .lede{margin-bottom:18px}
+.live-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);margin-right:6px;vertical-align:middle;opacity:0;
+}
+.live-dot.on{animation:blip 1.4s ease-out}
+@keyframes blip{0%{opacity:1}100%{opacity:0}}
+.bar-row.bumped .bar-fill{animation:bump .5s ease-out}
+@keyframes bump{0%{filter:brightness(1.5)}100%{filter:none}}
+@media (prefers-reduced-motion: reduce){
+  .live-dot.on,.bar-row.bumped .bar-fill{animation:none}
+}
+
 /* the screenshot region. tightened up so the whole verdict lands in one grab */
 #shot{padding-bottom:4px}
 .shot-line{margin:10px 0 20px;font-size:17px;line-height:1.35}
@@ -322,6 +337,16 @@ footer a{color:var(--muted)}
     </div>
 
     <div class="field">
+      <span class="micro">A second question (optional)</span>
+      <div class="chips" id="q2-presets"></div>
+      <div id="q2-wrap" class="hide">
+        <input type="text" id="f-q2" maxlength="140" placeholder="What should happen now?">
+        <div id="f-q2-options" style="margin-top:10px"></div>
+        <button class="linkbtn" id="add-q2-option" type="button">+ add another option</button>
+      </div>
+    </div>
+
+    <div class="field">
       <span class="micro">Attach something (optional)</span>
       <div class="chips" id="attach-modes">
         <button class="chip" type="button" data-mode="none">Nothing</button>
@@ -395,7 +420,7 @@ footer a{color:var(--muted)}
   <!-- VOTE -->
   <section id="s-vote" class="block hide">
     <div class="row">
-      <span class="micro">Step 1 of 3. Take a side</span>
+      <span class="micro" id="vote-step">Step 1 of 3. Take a side</span>
       <span class="mono" id="vote-serial" style="color:var(--muted)"></span>
     </div>
     <hr class="rule">
@@ -420,9 +445,24 @@ footer a{color:var(--muted)}
     <p class="tiny" id="case-mod-status" style="margin-top:8px"></p>
   </section>
 
+  <!-- SECOND QUESTION -->
+  <section id="s-second" class="block hide">
+    <div class="row">
+      <span class="micro" id="second-step">Step 2 of 4. The follow up</span>
+      <span class="mono" id="second-serial" style="color:var(--muted)"></span>
+    </div>
+    <hr class="rule">
+    <h3 id="second-question" class="accent-rule"></h3>
+    <div id="second-options" style="margin-top:18px"></div>
+    <div class="block">
+      <button class="btn" id="do-second">Next</button>
+      <button class="btn ghost" id="skip-second">Skip this one</button>
+    </div>
+  </section>
+
   <!-- PREDICT -->
   <section id="s-predict" class="block hide">
-    <span class="micro">Step 2 of 3. Predict the room</span>
+    <span class="micro" id="pred-step">Step 2 of 3. Predict the room</span>
     <hr class="rule">
     <h3 id="pred-question" class="accent-rule"></h3>
     <div style="margin-top:26px">
@@ -437,7 +477,7 @@ footer a{color:var(--muted)}
 
   <!-- REASON -->
   <section id="s-reason" class="block hide">
-    <span class="micro">Step 3 of 3. State your reasoning</span>
+    <span class="micro" id="reason-step">Step 3 of 3. State your reasoning</span>
     <hr class="rule">
     <p class="tiny" id="reason-ctx"></p>
     <div class="field" style="margin-top:14px">
@@ -487,8 +527,16 @@ footer a{color:var(--muted)}
       <div class="barcode" id="res-barcode"></div>
       <div class="row shot-foot">
         <span class="micro">thepublicinquiry.vercel.app</span>
-        <span class="micro" id="res-total"></span>
+        <span class="micro"><i class="live-dot" id="live-dot"></i><span id="res-total"></span></span>
       </div>
+    </div>
+
+    <div id="res-q2" class="hide">
+      <hr class="perf">
+      <span class="micro">The follow up</span>
+      <h3 id="res-q2-question" style="margin-top:8px;font-size:21px"></h3>
+      <div id="res-q2-bars" style="margin-top:14px"></div>
+      <p class="tiny" id="res-q2-note" style="margin-top:6px"></p>
     </div>
 
     <p class="tiny" id="res-record" style="margin-top:16px"></p>
@@ -499,10 +547,16 @@ footer a{color:var(--muted)}
       <span class="micro" id="res-ccount"></span>
     </div>
     <div id="res-comments" style="margin-top:16px"></div>
-    <hr class="rule">
-    <button class="btn" id="do-share-res">Share this case</button>
-    <button class="btn ghost" id="do-refresh">Refresh the tally</button>
-    <button class="btn ghost" id="do-new">File your own case</button>
+
+    <hr class="rule hard">
+    <div class="convert">
+      <span class="micro accent">Your turn</span>
+      <h2 id="convert-head">File one of your own.</h2>
+      <p id="convert-line" class="lede"></p>
+      <button class="btn accent" id="do-new">File a case</button>
+      <button class="btn ghost" id="do-share-res">Send this one to someone else</button>
+      <button class="linkbtn" id="do-refresh" type="button">Refresh the tally</button>
+    </div>
     <p class="tiny" id="res-err" style="margin-top:12px;color:var(--accent)"></p>
   </section>
 
@@ -541,15 +595,19 @@ var PRESETS = [
 /* ---------------- state ---------------- */
 var S = {
   caseId:null, hostKey:null, kase:null,
-  choice:null, prediction:50, voteId:null, results:null, isHost:false,
-  attachMode:"none", link:null, imageId:null
+  choice:null, choice2:-1, prediction:50, voteId:null, results:null, isHost:false,
+  attachMode:"none", link:null, imageId:null,
+  reported:{}, deleted:{}
 };
 
 /* ---------------- helpers ---------------- */
 function $(id){ return document.getElementById(id); }
 function show(id){
-  ["s-boot","s-build","s-filed","s-vote","s-predict","s-reason","s-result","s-notice"]
+  ["s-boot","s-build","s-filed","s-vote","s-second","s-predict","s-reason","s-result","s-notice"]
     .forEach(function(s){ $(s).classList.toggle("hide", s !== id); });
+  // Leaving the result screen ends the live poll, so a backgrounded case is not
+  // quietly hitting the tally forever.
+  if(id !== "s-result" && typeof stopLive === "function") stopLive();
   window.scrollTo(0,0);
 }
 function esc(s){
@@ -668,6 +726,7 @@ function startBuild(){
   ssSet("pi_guest","0");
   setMast("Filing Desk","Open");
   renderPresets();
+  renderQ2Presets();
   if(!$("f-options").children.length){ addOption("Person A"); addOption("Person B"); }
   show("s-build");
 }
@@ -678,10 +737,82 @@ function resetBuild(){
   count("f-evidence","c-evidence"); count("f-question","c-question"); count("f-comment","c-comment");
   Array.prototype.forEach.call($("q-presets").children, function(c){ c.setAttribute("aria-pressed","false"); });
   setAttachMode("none");
-  S.link = null; S.imageId = null;
+  S.link = null; S.imageId = null; S.choice2 = -1;
+  $("q2-wrap").classList.add("hide"); $("f-q2").value = ""; $("f-q2-options").innerHTML = "";
+  Array.prototype.forEach.call($("q2-presets").children, function(c,i){ c.setAttribute("aria-pressed", String(i===0)); });
   $("f-link").value = ""; $("link-status").textContent = ""; $("image-status").textContent = "";
   $("link-card").classList.add("hide"); $("link-card").innerHTML = "";
   $("image-preview").classList.add("hide"); $("f-image").value = "";
+}
+
+/* ---------------- the optional second question ---------------- */
+var Q2_PRESETS = [
+  { q:"", o:null, label:"None" },
+  { q:"What should happen now?", o:["Apologise","Let it go","Escalate it"] },
+  { q:"How bad is this?", o:["Trivial","Annoying","Serious"] },
+  { q:"Write your own", o:[] }
+];
+
+function renderQ2Presets(){
+  var wrap = $("q2-presets");
+  if(wrap.children.length) return;
+  Q2_PRESETS.forEach(function(p, idx){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip";
+    b.textContent = p.label || p.q;
+    b.setAttribute("aria-pressed", String(idx === 0));
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(wrap.children, function(c){ c.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true");
+      if(idx === 0){
+        $("q2-wrap").classList.add("hide");
+        $("f-q2").value = ""; $("f-q2-options").innerHTML = "";
+        return;
+      }
+      $("q2-wrap").classList.remove("hide");
+      $("f-q2").value = p.q;
+      $("f-q2-options").innerHTML = "";
+      if(p.o && p.o.length) p.o.forEach(addQ2Option);
+      else { addQ2Option(""); addQ2Option(""); $("f-q2").focus(); }
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function addQ2Option(value){
+  var box = $("f-q2-options");
+  if(box.children.length >= 4) return;
+  var row = document.createElement("div");
+  row.className = "opt-row";
+  var n = box.children.length + 1;
+  row.innerHTML = '<span class="idx">' + n + '</span>' +
+    '<input type="text" maxlength="60" placeholder="Option ' + n + '">' +
+    '<button type="button" class="x" aria-label="Remove option">&times;</button>';
+  row.querySelector("input").value = value || "";
+  row.querySelector(".x").addEventListener("click", function(){
+    if(box.children.length <= 2) return;
+    row.remove(); renumberQ2();
+  });
+  box.appendChild(row);
+  renumberQ2();
+}
+function renumberQ2(){
+  Array.prototype.forEach.call($("f-q2-options").children, function(row,i){
+    row.querySelector(".idx").textContent = i + 1;
+    row.querySelector("input").placeholder = "Option " + (i + 1);
+  });
+  $("add-q2-option").style.display = $("f-q2-options").children.length >= 4 ? "none" : "";
+}
+$("add-q2-option").addEventListener("click", function(){ addQ2Option(""); });
+
+function collectQ2(){
+  if($("q2-wrap").classList.contains("hide")) return null;
+  var q = $("f-q2").value.trim();
+  var opts = Array.prototype.map.call($("f-q2-options").querySelectorAll("input"), function(i){
+    return i.value.trim();
+  }).filter(Boolean);
+  if(q.length < 3 || opts.length < 2) return null;
+  return { question:q, options:opts };
 }
 
 /* ---------------- attachments ---------------- */
@@ -856,7 +987,7 @@ function fileCase(){
   btn.disabled = true; btn.textContent = "Filing...";
   post("/api/case", {
     evidence:evidence, question:question, options:options,
-    link:link, imageId:imageId
+    link:link, imageId:imageId, q2:collectQ2()
   })
     .then(function(j){
       lsSet("pi_host_" + j.id, j.hostKey);
@@ -961,8 +1092,44 @@ function renderCase(){
   show("s-vote");
 }
 
+/* A case with a follow up runs to four steps instead of three. */
+function hasQ2(){ return Boolean(S.kase && S.kase.q2 && S.kase.q2.options && S.kase.q2.options.length); }
+function stepCount(){ return hasQ2() ? 4 : 3; }
+function stepLabel(n, text){ return "Step " + n + " of " + stepCount() + ". " + text; }
+
+function afterSide(){
+  if(S.choice === null) return;
+  if(hasQ2()) toSecond();
+  else toPredict();
+}
+
+function toSecond(){
+  var q2 = S.kase.q2;
+  $("second-step").textContent = stepLabel(2, "The follow up");
+  $("second-serial").textContent = (S.kase && S.kase.serial) || "";
+  $("second-question").textContent = q2.question;
+  var box = $("second-options");
+  box.innerHTML = "";
+  q2.options.forEach(function(opt,i){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "choice";
+    b.setAttribute("aria-pressed", String(S.choice2 === i));
+    b.innerHTML = '<span class="mark"></span><span></span>';
+    b.lastChild.textContent = opt;
+    b.addEventListener("click", function(){
+      S.choice2 = i;
+      Array.prototype.forEach.call(box.children, function(c,jx){
+        c.setAttribute("aria-pressed", jx === i ? "true" : "false");
+      });
+    });
+    box.appendChild(b);
+  });
+  show("s-second");
+}
+
 function toPredict(){
   if(S.choice === null) return;
+  $("pred-step").textContent = stepLabel(hasQ2() ? 3 : 2, "Predict the room");
   $("pred-question").textContent =
     'Out of everyone who rules on this, what percent do you think picked "' + S.kase.options[S.choice] + '"?';
   $("f-pred").value = S.prediction;
@@ -971,6 +1138,7 @@ function toPredict(){
 }
 
 function toReason(){
+  $("reason-step").textContent = stepLabel(stepCount(), "State your reasoning");
   $("reason-ctx").textContent =
     'You picked "' + S.kase.options[S.choice] + '" and you reckon ' + S.prediction +
     '% of the room agrees. Last thing, then the file opens.';
@@ -988,6 +1156,7 @@ function submitVote(withComment){
   post("/api/vote", {
     id: S.caseId,
     choice: S.choice,
+    choice2: S.choice2,
     prediction: S.prediction,
     comment: withComment ? $("f-comment").value.trim() : ""
   }).then(function(j){
@@ -1141,24 +1310,33 @@ function renderResults(j){
     el.querySelector(".txt").textContent = c.text;
 
     var acts = el.querySelector(".acts");
+    /* The live poll re-renders this list, so anything already reported or
+       deleted has to come back in that state rather than resetting. */
+    if(S.deleted[c.id]) el.classList.add("gone");
     if(c.id !== S.voteId){
       var rep = document.createElement("button");
-      rep.className = "linkbtn"; rep.textContent = "Report";
+      rep.className = "linkbtn";
+      rep.textContent = S.reported[c.id] ? "Reported" : "Report";
+      rep.disabled = Boolean(S.reported[c.id]);
       rep.addEventListener("click", function(){
         rep.disabled = true; rep.textContent = "Reported";
+        S.reported[c.id] = true;
         post("/api/report", { id:S.caseId, v:S.voteId, target:c.id }).catch(function(){
-          rep.textContent = "Report failed";
+          S.reported[c.id] = false;
+          rep.disabled = false; rep.textContent = "Report failed";
         });
       });
       acts.appendChild(rep);
     }
     if(S.isHost){
       var del = document.createElement("button");
-      del.className = "linkbtn"; del.textContent = "Delete";
+      del.className = "linkbtn";
+      del.textContent = S.deleted[c.id] ? "Deleted" : "Delete";
+      del.disabled = Boolean(S.deleted[c.id]);
       del.addEventListener("click", function(){
         del.disabled = true; del.textContent = "Deleting...";
         post("/api/moderate", { id:S.caseId, key:S.hostKey, target:c.id, action:"delete" })
-          .then(function(){ el.classList.add("gone"); del.textContent = "Deleted"; })
+          .then(function(){ S.deleted[c.id] = true; el.classList.add("gone"); del.textContent = "Deleted"; })
           .catch(function(e){ del.disabled = false; del.textContent = "Delete failed"; });
       });
       acts.appendChild(del);
@@ -1166,9 +1344,101 @@ function renderResults(j){
     cbox.appendChild(el);
   });
 
+  /* the follow up */
+  var q2 = S.kase && S.kase.q2;
+  if(q2 && j.percents2){
+    $("res-q2").classList.remove("hide");
+    $("res-q2-question").textContent = q2.question;
+    var b2 = $("res-q2-bars");
+    b2.innerHTML = "";
+    q2.options.forEach(function(opt,i){
+      var p = j.percents2[i] || 0;
+      var n = (j.counts2 && j.counts2[i]) || 0;
+      var row = document.createElement("div");
+      row.className = "bar-row" + (i === you.choice2 ? " mine" : "");
+      row.innerHTML =
+        '<div class="bar-head"><b></b><em>' + p + '% &middot; ' + n + '</em></div>' +
+        '<div class="bar"><i style="width:' + p + '%;background:' + OPT_COLORS[i % 4] + '"></i></div>';
+      row.querySelector("b").textContent = opt;
+      b2.appendChild(row);
+    });
+    var t2 = j.total2 || 0;
+    $("res-q2-note").textContent = t2 === total
+      ? ""
+      : t2 + (t2 === 1 ? " person" : " people") + " answered this one.";
+  } else {
+    $("res-q2").classList.add("hide");
+  }
+
+  /* the conversion line, tuned to what actually just happened to them */
+  $("convert-line").textContent = total <= 1
+    ? "Nobody has argued with you yet. Get some people in here, then file one of your own."
+    : (mine !== top
+        ? "You were outvoted. Go and file something the room will get wrong."
+        : "You called it. Now file one nobody can agree on.");
+
   if(j.note){ $("res-err").textContent = j.note; } else { $("res-err").textContent = ""; }
   show("s-result");
+  startLive();
 }
+
+/* ---------------- live results ---------------- */
+/* Polls while the tab is actually being looked at. Stops after a quiet spell so
+   an abandoned tab is not sitting there hitting the tally forever. */
+var LIVE = { timer:null, misses:0 };
+
+function stopLive(){
+  if(LIVE.timer){ clearTimeout(LIVE.timer); LIVE.timer = null; }
+}
+
+function startLive(){
+  stopLive();
+  LIVE.misses = 0;
+  scheduleLive();
+}
+
+function scheduleLive(){
+  stopLive();
+  if(LIVE.misses >= 12) return;            // roughly five quiet minutes, then stop
+  var wait = LIVE.misses < 4 ? 10000 : LIVE.misses < 8 ? 20000 : 45000;
+  LIVE.timer = setTimeout(pollLive, wait);
+}
+
+function pollLive(){
+  if(document.hidden || $("s-result").classList.contains("hide")){ scheduleLive(); return; }
+  var url = "/api/results?id=" + encodeURIComponent(S.caseId) + "&v=" + encodeURIComponent(S.voteId);
+  if(S.hostKey) url += "&k=" + encodeURIComponent(S.hostKey);
+  api(url).then(function(j){
+    var before = S.results || {};
+    var changed = (j.total !== before.total) ||
+      ((j.comments || []).length !== (before.comments || []).length);
+    S.results = j;
+    if(changed){
+      LIVE.misses = 0;
+      renderResults(j);
+      flashLive();
+    } else {
+      LIVE.misses += 1;
+    }
+  }).catch(function(){
+    LIVE.misses += 1;                       // a flaky tally must not spam retries
+  }).then(scheduleLive);
+}
+
+function flashLive(){
+  var dot = $("live-dot");
+  if(!dot) return;
+  dot.classList.remove("on");
+  void dot.offsetWidth;                     // restart the animation
+  dot.classList.add("on");
+}
+
+document.addEventListener("visibilitychange", function(){
+  if(!document.hidden && !$("s-result").classList.contains("hide")){
+    LIVE.misses = 0;
+    scheduleLive();
+  }
+});
 
 /* ---------------- share ---------------- */
 function guestLink(){
@@ -1261,7 +1531,9 @@ $("do-open-case").addEventListener("click", function(){
   go("/c/" + S.caseId);
 });
 
-$("do-side").addEventListener("click", toPredict);
+$("do-side").addEventListener("click", afterSide);
+$("do-second").addEventListener("click", toPredict);
+$("skip-second").addEventListener("click", function(){ S.choice2 = -1; toPredict(); });
 $("f-pred").addEventListener("input", function(){
   S.prediction = parseInt(this.value, 10) || 0;
   $("pred-num").textContent = S.prediction;

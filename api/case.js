@@ -78,6 +78,7 @@ async function getCase(req, res) {
     evidence: view.evidence,
     question: view.question,
     options: view.options,
+    q2: view.q2 || null,
     link: view.link || null,
     image: view.image || null,
     createdAt: view.createdAt,
@@ -149,6 +150,22 @@ async function createCase(req, res, debug) {
     return fail(res, 400, 'The evidence needs a bit more than that.');
   }
 
+  // The optional follow up. Dropped silently if it does not have a question and
+  // at least two distinct options, since a half filled one helps nobody.
+  let q2 = null;
+  const q2question = clean(body.q2?.question, 140);
+  const q2options = (Array.isArray(body.q2?.options) ? body.q2.options : [])
+    .map((o) => clean(o, 60))
+    .filter(Boolean)
+    .slice(0, MAX_OPTIONS);
+  if (
+    q2question.length >= 3 &&
+    q2options.length >= 2 &&
+    new Set(q2options.map((o) => o.toLowerCase())).size === q2options.length
+  ) {
+    q2 = { question: q2question, options: q2options };
+  }
+
   const kase = {
     id,
     serial,
@@ -156,6 +173,7 @@ async function createCase(req, res, debug) {
     evidence,
     question,
     options,
+    ...(q2 ? { q2 } : {}),
     ...(link ? { link } : {}),
     ...(image ? { image } : {}),
     hostKeyHash: sha(hostKey),
