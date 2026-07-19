@@ -66,15 +66,20 @@ export default async function handler(req, res) {
 
       // Actually delete the bytes rather than just hiding them. A host who
       // takes a photo down means it should be gone.
+      let photoDeleted = null;
       if ((action === 'strip' || action === 'close') && kase.image?.id) {
         try {
           const url = await blobUrl(uploadPath(kase.image.id));
           if (url) await del(url);
-        } catch {
-          // The state flag already hides it, so a failed delete is not fatal.
+          photoDeleted = true;
+        } catch (err) {
+          // The state flag already hides it, so this is not fatal, but it must
+          // not fail silently either. A host needs to know the file is still
+          // out there so they can ask for it to be dealt with properly.
+          photoDeleted = false;
         }
       }
-      return res.status(200).json({ ok: true, target, action, state });
+      return res.status(200).json({ ok: true, target, action, state, photoDeleted });
     }
 
     const path = `c/${id}/x/${target}.json`;

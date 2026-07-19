@@ -69,7 +69,13 @@ export default async function handler(req, res) {
       contentType: sig.type,
       addRandomSuffix: false,
       allowOverwrite: false,
-      cacheControlMaxAge: 31536000,
+      /**
+       * Five minutes, not a year. Deleting a blob does not reach into edge
+       * caches that already hold it, so a long max age would leave a photo a
+       * host has taken down still being served from the edge. This bounds that
+       * window rather than trusting the CDN to purge promptly.
+       */
+      cacheControlMaxAge: 300,
     });
     return res.status(200).json({ ok: true, uploadId, url: blob.url, bytes: buf.length });
   } catch (err) {

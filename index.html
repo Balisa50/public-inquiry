@@ -1231,9 +1231,11 @@ function hostAction(action, confirmText){
   if(!window.confirm(confirmText)) return;
   $("case-mod-status").textContent = "";
   post("/api/moderate", { id:S.caseId, key:S.hostKey, target:"case", action:action })
-    .then(function(){
+    .then(function(j){
       if(action === "close"){ notice("Case withdrawn.", "You took this one down. Nobody can rule on it now."); return; }
-      $("case-mod-status").textContent = "Attachment removed.";
+      $("case-mod-status").textContent = j.photoDeleted === false
+        ? "Removed from the case, but the file itself did not delete. Try again."
+        : "Attachment removed.";
       $("do-strip").classList.add("hide");
       $("vote-exhibit").innerHTML = "";
       if(S.kase){ delete S.kase.image; delete S.kase.link; }
