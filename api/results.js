@@ -55,8 +55,12 @@ export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     isHost,
+    serial: kase.serial,
     question: kase.question,
     options: kase.options,
+    // Needed so a returning voter, who never loaded the case itself, can still
+    // be shown the follow up they answered.
+    q2: kase.q2 || null,
     ...results,
   });
 }

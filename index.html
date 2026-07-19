@@ -1181,7 +1181,10 @@ function loadResults(initial){
   var url = "/api/results?id=" + encodeURIComponent(S.caseId) + "&v=" + encodeURIComponent(S.voteId);
   if(S.hostKey) url += "&k=" + encodeURIComponent(S.hostKey);
   return api(url).then(function(j){
-    S.kase = S.kase || { options:j.options, question:j.question, serial:"" };
+    /* A returning voter arrives straight here without ever loading the case,
+       so the shape has to be filled in from the results payload. */
+    S.kase = S.kase || { options:j.options, question:j.question, serial:j.serial || "", q2:j.q2 || null };
+    if(!S.kase.q2 && j.q2) S.kase.q2 = j.q2;
     S.results = j;
     S.isHost = Boolean(j.isHost);
     renderResults(j);
