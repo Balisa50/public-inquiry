@@ -1436,8 +1436,12 @@ function flashLive(){
 
 document.addEventListener("visibilitychange", function(){
   if(!document.hidden && !$("s-result").classList.contains("hide")){
+    /* Coming back to the tab should show the current tally straight away.
+       Waiting out another interval means staring at numbers you can already
+       tell are stale. */
     LIVE.misses = 0;
-    scheduleLive();
+    stopLive();
+    pollLive();
   }
 });
 
