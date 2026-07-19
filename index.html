@@ -1070,6 +1070,7 @@ function renderCase(){
   if(k.image && k.image.url) ex.appendChild(exhibitNode({ kind:"image", url:k.image.url }));
   else if(k.link && k.link.url) ex.appendChild(exhibitNode(k.link));
 
+  $("vote-step").textContent = stepLabel(1, "Take a side");
   $("host-tools").classList.toggle("hide", !S.isHost);
   $("do-strip").classList.toggle("hide", !(k.image || k.link));
   $("case-mod-status").textContent = "";
