@@ -208,6 +208,44 @@ export default async function handler(req, res) {
 
   const embed = detectEmbed(u);
 
+  /**
+   * YouTube serves a JavaScript shell to anything that is not a browser, so
+   * scraping og:title off it gets nothing. Both providers expose a keyless
+   * oEmbed endpoint that returns the title and thumbnail directly.
+   */
+  if (embed) {
+    const oembed =
+      embed.provider === 'youtube'
+        ? `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(u.href)}`
+        : `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(u.href)}`;
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
+      let j;
+      try {
+        const r = await fetch(oembed, { signal: ac.signal });
+        if (r.ok) j = await r.json();
+      } finally {
+        clearTimeout(timer);
+      }
+      if (j?.title) {
+        let thumb = String(j.thumbnail_url || '');
+        if (thumb && !/^https:\/\//i.test(thumb)) thumb = '';
+        res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600');
+        return res.status(200).json({
+          ok: true,
+          url: u.href,
+          title: clean(j.title, 200),
+          site: clean(j.provider_name || u.hostname.replace(/^www\./, ''), 80),
+          image: clean(thumb, 600),
+          embed,
+        });
+      }
+    } catch {
+      // Fall through to the ordinary scrape.
+    }
+  }
+
   let html = '';
   let finalUrl = u;
   try {
