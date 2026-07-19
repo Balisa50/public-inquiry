@@ -63,7 +63,13 @@ async function getCase(req, res) {
     });
   }
 
-  res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=30');
+  /**
+   * Short edge cache only. A host takedown or a report threshold has to reach
+   * readers quickly, and anything longer means moderated content keeps being
+   * served from cache after it was pulled. Ten seconds still absorbs the
+   * stampede when a link lands in a busy group chat.
+   */
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10');
   return res.status(200).json({
     ok: true,
     id: view.id,

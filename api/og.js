@@ -203,7 +203,13 @@ export default async function handler(req) {
     height: 630,
     ...(fonts.length ? { fonts } : {}),
     headers: {
-      'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+      /**
+       * Five minutes, not a day. A pulled case should stop rendering a preview
+       * card reasonably soon. Worth being clear about the limit though: once
+       * WhatsApp or X has cached a preview on their side, nothing here can
+       * reach in and purge it.
+       */
+      'Cache-Control': 'public, max-age=0, s-maxage=300',
     },
   });
 }

@@ -78,6 +78,8 @@ export default async function handler(req, res) {
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600');
+  // Same reasoning as /api/case: a takedown has to stop the preview quickly,
+  // and stale-while-revalidate would keep serving a pulled case for minutes.
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10');
   res.status(200).send(html);
 }
