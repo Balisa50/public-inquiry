@@ -237,6 +237,12 @@ input[type=range]::-moz-range-thumb{
 .linkbtn.quiet.accent{color:var(--accent)}
 #link-card:not(.hide){margin-top:14px}
 
+.err{margin-top:12px;color:var(--accent);min-height:1px}
+.err:empty{margin:0}
+/* the step 3 preview is a picture of the case, not a form to poke at */
+#b3-preview .choice{cursor:default;pointer-events:none}
+#b3-preview .evidence{margin-bottom:0}
+
 .convert{margin-top:22px}
 .convert h2{margin:6px 0 8px}
 .convert .lede{margin-bottom:18px}
@@ -324,74 +330,105 @@ footer a{color:var(--muted)}
     <p class="micro">Retrieving file<span class="spin">...</span></p>
   </section>
 
-  <!-- BUILD -->
+  <!-- BUILD. Three steps, the same shape as ruling on a case, because one long
+       form with two optional sections buried in the middle was confusing. -->
   <section id="s-build" class="block hide">
-    <h1>File a case.</h1>
-    <p class="lede">Somebody did something. Let the public rule on it.</p>
-    <hr class="perf">
-
-    <div class="field">
-      <span class="micro">Exhibit A. The evidence</span>
-      <textarea id="f-evidence" maxlength="1200" placeholder="Set out what happened. Keep it short and keep real people's names and faces out of it."></textarea>
-      <div class="count"><span id="c-evidence">0</span> / 1200</div>
+    <div class="row">
+      <span class="micro" id="b-step">Step 1 of 3. The evidence</span>
+      <span class="micro" id="b-of">Filing desk</span>
     </div>
+    <hr class="rule hard">
 
-    <div class="field">
-      <span class="micro">A second question (optional)</span>
-      <div class="chips" id="q2-presets"></div>
-      <div id="q2-wrap" class="hide">
-        <input type="text" id="f-q2" maxlength="140" placeholder="What should happen now?">
-        <div id="f-q2-options" style="margin-top:10px"></div>
-        <button class="linkbtn" id="add-q2-option" type="button">+ add another option</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <span class="micro">Attach something (optional)</span>
-      <div class="chips" id="attach-modes">
-        <button class="chip" type="button" data-mode="none">Nothing</button>
-        <button class="chip" type="button" data-mode="link">A link</button>
-        <button class="chip" type="button" data-mode="image">A photo</button>
+    <!-- STEP 1 -->
+    <div id="b1">
+      <h1>What happened?</h1>
+      <p class="lede">Set it out plainly. Keep real people's names and faces out of it.</p>
+      <div class="field" style="margin-top:24px">
+        <textarea id="f-evidence" maxlength="1200" placeholder="He borrowed my charger for two minutes. That was Tuesday. It is now Sunday."></textarea>
+        <div class="count"><span id="c-evidence">0</span> / 1200</div>
       </div>
 
-      <div id="attach-link" class="hide" style="margin-top:14px">
-        <input type="url" id="f-link" maxlength="600" placeholder="Paste a news story, a public video, a public post">
-        <button class="btn ghost" id="do-preview" type="button">Fetch it</button>
-        <p class="tiny" id="link-status" style="margin-top:8px"></p>
-        <div id="link-card" class="hide"></div>
-      </div>
-
-      <div id="attach-image" class="hide" style="margin-top:14px">
-        <input type="file" id="f-image" accept="image/jpeg,image/png,image/webp" style="display:none">
-        <button class="btn ghost" id="do-pick" type="button">Choose a photo</button>
-        <p class="tiny" id="image-status" style="margin-top:8px"></p>
-        <div id="image-preview" class="hide">
-          <img id="image-thumb" alt="The photo you attached">
-          <button class="linkbtn" id="do-drop-image" type="button">Remove this photo</button>
+      <button class="linkbtn" id="toggle-attach" type="button">Add a link or a photo</button>
+      <div id="attach-box" class="hide" style="margin-top:16px">
+        <div class="chips" id="attach-modes">
+          <button class="chip" type="button" data-mode="none">Nothing</button>
+          <button class="chip" type="button" data-mode="link">A link</button>
+          <button class="chip" type="button" data-mode="image">A photo</button>
         </div>
-        <p class="tiny" style="margin-top:10px">Location data and camera details are stripped before the photo leaves your phone. Photos of people who did not agree to be here get taken down.</p>
+
+        <div id="attach-link" class="hide" style="margin-top:14px">
+          <input type="url" id="f-link" maxlength="600" placeholder="Paste a news story, a public video, a public post">
+          <button class="btn ghost" id="do-preview" type="button">Fetch it</button>
+          <p class="tiny" id="link-status" style="margin-top:8px"></p>
+          <div id="link-card" class="hide"></div>
+        </div>
+
+        <div id="attach-image" class="hide" style="margin-top:14px">
+          <input type="file" id="f-image" accept="image/jpeg,image/png,image/webp" style="display:none">
+          <button class="btn ghost" id="do-pick" type="button">Choose a photo</button>
+          <p class="tiny" id="image-status" style="margin-top:8px"></p>
+          <div id="image-preview" class="hide">
+            <img id="image-thumb" alt="The photo you attached">
+            <button class="linkbtn" id="do-drop-image" type="button">Remove this photo</button>
+          </div>
+          <p class="tiny" style="margin-top:10px">Location data is stripped before the photo leaves your phone. Photos of people who did not agree to be here get taken down.</p>
+        </div>
+      </div>
+
+      <div class="block">
+        <button class="btn" id="b1-next">Next</button>
+        <p class="tiny err" id="b1-err"></p>
       </div>
     </div>
 
-    <div class="field">
-      <span class="micro">The question</span>
-      <div class="chips" id="q-presets"></div>
-      <input type="text" id="f-question" maxlength="140" placeholder="Who is at fault?">
-      <div class="count"><span id="c-question">0</span> / 140</div>
+    <!-- STEP 2 -->
+    <div id="b2" class="hide">
+      <h1>What are we deciding?</h1>
+      <p class="lede">Pick a question. The options fill themselves in, change them if you like.</p>
+      <div class="field" style="margin-top:24px">
+        <div class="chips" id="q-presets"></div>
+        <input type="text" id="f-question" maxlength="140" placeholder="Who is at fault?">
+        <div class="count"><span id="c-question">0</span> / 140</div>
+      </div>
+
+      <div class="field">
+        <span class="micro">What people choose from</span>
+        <div id="f-options"></div>
+        <button class="linkbtn" id="add-option" type="button">+ add another option</button>
+      </div>
+
+      <div class="block">
+        <button class="btn" id="b2-next">Next</button>
+        <button class="btn ghost" id="b2-back">Back</button>
+        <p class="tiny err" id="b2-err"></p>
+      </div>
     </div>
 
-    <div class="field">
-      <span class="micro">The verdict options</span>
-      <div id="f-options"></div>
-      <button class="linkbtn" id="add-option" type="button">+ add another option</button>
-    </div>
+    <!-- STEP 3 -->
+    <div id="b3" class="hide">
+      <h1>Ready to file.</h1>
+      <p class="lede">This is what everybody else will see.</p>
+      <div id="b3-preview" style="margin-top:24px"></div>
 
-    <div class="notice tiny">
-      Rulings are anonymous to everyone who reads the case, including you. Keep it about the thing, not about a person who never asked to be here.
-    </div>
-    <div class="block">
-      <button class="btn accent" id="do-file">File the case</button>
-      <p class="tiny" id="build-err" style="margin-top:12px;color:var(--accent)"></p>
+      <hr class="perf">
+      <button class="linkbtn" id="toggle-q2" type="button">Add a follow up question</button>
+      <div id="q2-box" class="hide" style="margin-top:14px">
+        <div class="chips" id="q2-presets"></div>
+        <div id="q2-wrap" class="hide">
+          <input type="text" id="f-q2" maxlength="140" placeholder="What should happen now?">
+          <div id="f-q2-options" style="margin-top:10px"></div>
+          <button class="linkbtn" id="add-q2-option" type="button">+ add another option</button>
+        </div>
+      </div>
+
+      <div class="notice tiny">
+        Rulings are anonymous to everyone who reads the case, including you. Keep it about the thing, not about a person who never asked to be here.
+      </div>
+      <div class="block">
+        <button class="btn accent" id="do-file">File the case</button>
+        <button class="btn ghost" id="b3-back">Back</button>
+        <p class="tiny err" id="build-err"></p>
+      </div>
     </div>
   </section>
 
@@ -596,7 +633,7 @@ var PRESETS = [
 var S = {
   caseId:null, hostKey:null, kase:null,
   choice:null, choice2:-1, prediction:50, voteId:null, results:null, isHost:false,
-  attachMode:"none", link:null, imageId:null,
+  attachMode:"none", link:null, imageId:null, buildStep:0,
   reported:{}, deleted:{}
 };
 
@@ -722,32 +759,142 @@ function notice(title, body){
 }
 
 /* ---------------- build ---------------- */
+/* Filing runs as three steps for the same reason ruling on a case does. One
+   screen with two optional sections sitting between the evidence and the actual
+   question made people hunt for the point of the thing. */
+var B_STEPS = [
+  { id:"b1", label:"The evidence" },
+  { id:"b2", label:"The question" },
+  { id:"b3", label:"Check and file" }
+];
+
+function buildStep(n){
+  S.buildStep = n;
+  B_STEPS.forEach(function(s,i){ $(s.id).classList.toggle("hide", i !== n); });
+  $("b-step").textContent = "Step " + (n + 1) + " of 3. " + B_STEPS[n].label;
+  if(n === 2) renderCasePreview();
+  window.scrollTo(0,0);
+}
+
+function stepOneValid(){
+  var evidence = $("f-evidence").value.trim();
+  var hasAttachment = Boolean(
+    (S.attachMode === "link" && S.link) || (S.attachMode === "image" && S.imageId)
+  );
+  if(!hasAttachment && evidence.length < 10){
+    $("b1-err").textContent = "Give us a bit more than that, or attach something.";
+    return false;
+  }
+  $("b1-err").textContent = "";
+  return true;
+}
+
+function stepTwoValid(){
+  var question = $("f-question").value.trim();
+  var options = Array.prototype.map.call($("f-options").querySelectorAll("input"), function(i){
+    return i.value.trim();
+  }).filter(Boolean);
+  if(question.length < 3){ $("b2-err").textContent = "Every case needs a question."; return false; }
+  if(options.length < 2){ $("b2-err").textContent = "Give the public at least two options."; return false; }
+  var lower = options.map(function(o){ return o.toLowerCase(); });
+  if(new Set(lower).size !== lower.length){
+    $("b2-err").textContent = "Two options are the same. Make them different.";
+    return false;
+  }
+  $("b2-err").textContent = "";
+  return true;
+}
+
+/* Shows the filer their case the way a juror will get it, so nobody files a
+   case whose question makes no sense next to its evidence. */
+function renderCasePreview(){
+  var box = $("b3-preview");
+  box.innerHTML = "";
+  var evidence = $("f-evidence").value.trim();
+
+  if(evidence){
+    var p = document.createElement("p");
+    p.className = "evidence";
+    p.textContent = evidence;
+    box.appendChild(p);
+  }
+
+  var att = (S.attachMode === "image" && S.imageId) ? { kind:"image", url:$("image-thumb").src }
+          : (S.attachMode === "link" && S.link) ? S.link : null;
+  if(att) box.appendChild(exhibitNode(att));
+
+  var hr = document.createElement("hr"); hr.className = "perf";
+  box.appendChild(hr);
+
+  var h = document.createElement("h3");
+  h.className = "accent-rule";
+  h.textContent = $("f-question").value.trim();
+  box.appendChild(h);
+
+  var list = document.createElement("div");
+  list.style.marginTop = "16px";
+  Array.prototype.forEach.call($("f-options").querySelectorAll("input"), function(inp){
+    if(!inp.value.trim()) return;
+    var row = document.createElement("div");
+    row.className = "choice";
+    row.innerHTML = '<span class="mark"></span><span></span>';
+    row.lastChild.textContent = inp.value.trim();
+    list.appendChild(row);
+  });
+  box.appendChild(list);
+}
+
 function startBuild(){
   ssSet("pi_guest","0");
   setMast("Filing Desk","Open");
   renderPresets();
   renderQ2Presets();
   if(!$("f-options").children.length){ addOption("Person A"); addOption("Person B"); }
+  buildStep(S.buildStep || 0);
   show("s-build");
 }
 
 function resetBuild(){
   $("f-evidence").value = ""; $("f-question").value = ""; $("f-comment").value = "";
   $("f-options").innerHTML = ""; $("build-err").textContent = "";
+  $("b1-err").textContent = ""; $("b2-err").textContent = "";
   count("f-evidence","c-evidence"); count("f-question","c-question"); count("f-comment","c-comment");
   Array.prototype.forEach.call($("q-presets").children, function(c){ c.setAttribute("aria-pressed","false"); });
   setAttachMode("none");
-  S.link = null; S.imageId = null; S.choice2 = -1;
+  $("attach-box").classList.add("hide");
+  S.link = null; S.imageId = null; S.choice2 = -1; S.buildStep = 0;
+  $("q2-box").classList.add("hide");
   $("q2-wrap").classList.add("hide"); $("f-q2").value = ""; $("f-q2-options").innerHTML = "";
-  Array.prototype.forEach.call($("q2-presets").children, function(c,i){ c.setAttribute("aria-pressed", String(i===0)); });
+  Array.prototype.forEach.call($("q2-presets").children, function(c){ c.setAttribute("aria-pressed","false"); });
   $("f-link").value = ""; $("link-status").textContent = ""; $("image-status").textContent = "";
   $("link-card").classList.add("hide"); $("link-card").innerHTML = "";
   $("image-preview").classList.add("hide"); $("f-image").value = "";
 }
 
+$("b1-next").addEventListener("click", function(){ if(stepOneValid()) buildStep(1); });
+$("b2-next").addEventListener("click", function(){ if(stepTwoValid()) buildStep(2); });
+$("b2-back").addEventListener("click", function(){ buildStep(0); });
+$("b3-back").addEventListener("click", function(){ buildStep(1); });
+$("toggle-attach").addEventListener("click", function(){
+  var box = $("attach-box");
+  box.classList.toggle("hide");
+  this.textContent = box.classList.contains("hide") ? "Add a link or a photo" : "Never mind the attachment";
+  if(box.classList.contains("hide")) setAttachMode("none");
+});
+$("toggle-q2").addEventListener("click", function(){
+  var box = $("q2-box");
+  box.classList.toggle("hide");
+  this.textContent = box.classList.contains("hide") ? "Add a follow up question" : "Never mind the follow up";
+  if(box.classList.contains("hide")){
+    $("q2-wrap").classList.add("hide");
+    Array.prototype.forEach.call($("q2-presets").children, function(c){ c.setAttribute("aria-pressed","false"); });
+  }
+});
+
 /* ---------------- the optional second question ---------------- */
+/* No "none" chip here. The follow up is behind a toggle now, so closing the
+   toggle is how you say no to it. */
 var Q2_PRESETS = [
-  { q:"", o:null, label:"None" },
   { q:"What should happen now?", o:["Apologise","Let it go","Escalate it"] },
   { q:"How bad is this?", o:["Trivial","Annoying","Serious"] },
   { q:"Write your own", o:[] }
@@ -756,19 +903,14 @@ var Q2_PRESETS = [
 function renderQ2Presets(){
   var wrap = $("q2-presets");
   if(wrap.children.length) return;
-  Q2_PRESETS.forEach(function(p, idx){
+  Q2_PRESETS.forEach(function(p){
     var b = document.createElement("button");
     b.type = "button"; b.className = "chip";
-    b.textContent = p.label || p.q;
-    b.setAttribute("aria-pressed", String(idx === 0));
+    b.textContent = p.q;
+    b.setAttribute("aria-pressed","false");
     b.addEventListener("click", function(){
       Array.prototype.forEach.call(wrap.children, function(c){ c.setAttribute("aria-pressed","false"); });
       b.setAttribute("aria-pressed","true");
-      if(idx === 0){
-        $("q2-wrap").classList.add("hide");
-        $("f-q2").value = ""; $("f-q2-options").innerHTML = "";
-        return;
-      }
       $("q2-wrap").classList.remove("hide");
       $("f-q2").value = p.q;
       $("f-q2-options").innerHTML = "";
@@ -806,6 +948,7 @@ function renumberQ2(){
 $("add-q2-option").addEventListener("click", function(){ addQ2Option(""); });
 
 function collectQ2(){
+  if($("q2-box").classList.contains("hide")) return null;
   if($("q2-wrap").classList.contains("hide")) return null;
   var q = $("f-q2").value.trim();
   var opts = Array.prototype.map.call($("f-q2-options").querySelectorAll("input"), function(i){
